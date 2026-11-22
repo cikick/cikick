@@ -2,5 +2,15 @@
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "printWidth": 120,
   "singleQuote": true,
-  "trailingComma": "all"
+  "trailingComma": "all",
+  "ignorePatterns": [
+    "**/.github/workflows/*.yml",
+    "**/cikick.lock.json",
+    "**/.nvmrc",
+    "**/renovate.json",
+    "release-please-config.json",
+    ".release-please-manifest.json",
+    "pnpm-lock.yaml",
+    "dist"
+  ]
 }

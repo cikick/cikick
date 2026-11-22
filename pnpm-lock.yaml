@@ -17,6 +17,9 @@ importers:
       '@cikick/policies':
         specifier: workspace:*
         version: link:packages/policies
+      '@cikick/workflows':
+        specifier: workspace:*
+        version: link:packages/workflows
       '@types/node':
         specifier: ^22.10.0
         version: 22.20.5
@@ -153,6 +156,22 @@ importers:
       constructs:
         specifier: ^10.8.1
         version: 10.8.1
+
+  packages/workflows:
+    dependencies:
+      '@cikick/core':
+        specifier: workspace:*
+        version: link:../core
+      constructs:
+        specifier: ^10.8.1
+        version: 10.8.1
+    devDependencies:
+      '@cikick/policies':
+        specifier: workspace:*
+        version: link:../policies
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
 
 packages:
 

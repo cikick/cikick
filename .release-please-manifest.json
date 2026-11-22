@@ -1,0 +1,7 @@
+{
+  "packages/core": "0.1.0",
+  "packages/cli": "0.1.0",
+  "packages/policies": "0.1.0",
+  "packages/fleet": "0.1.0",
+  "packages/workflows": "0.1.0"
+}

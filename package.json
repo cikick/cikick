@@ -9,12 +9,14 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "cikick": "node packages/cli/dist/bin.mjs"
   },
   "devDependencies": {
     "@cikick/cli": "workspace:*",
     "@cikick/core": "workspace:*",
     "@cikick/policies": "workspace:*",
+    "@cikick/workflows": "workspace:*",
     "@types/node": "^22.10.0",
     "oxfmt": "0.79.0",
     "oxlint": "1.94.0",

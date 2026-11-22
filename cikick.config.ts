@@ -1,36 +1,27 @@
-import { Workflow, type App } from '@cikick/core';
+import { type App } from '@cikick/core';
 import { applyBaseline } from '@cikick/policies';
+import { ConventionalCommits, NodeCi, ReleasePlease } from '@cikick/workflows';
 
-// Dogfooding: the docs site deploy workflow is itself a cikick construct.
-// Regenerate with `pnpm exec cikick synth`; CI-style verification: `pnpm exec cikick check`.
+// Dogfooding: this repo's workflows and release config come from @cikick/workflows, the same
+// constructs downstream repos use. Regenerate with `pnpm cikick synth`; verify with `pnpm cikick check` (runs in CI).
 export default (app: App) => {
-  const pages = new Workflow(app, 'docs-pages', {
-    name: 'Docs (GitHub Pages)',
-    on: {
-      push: { branches: ['main'], paths: ['docs-site/**', '.github/workflows/docs-pages.yml'] },
-      workflowDispatch: {},
+  new NodeCi(app, 'ci', {
+    commands: {
+      Build: 'pnpm build',
+      Typecheck: 'pnpm typecheck',
+      Lint: 'pnpm lint',
+      Format: 'pnpm format:check',
+      Test: 'pnpm test',
     },
-    permissions: { contents: 'read', pages: 'write', idToken: 'write' },
-    concurrency: { group: 'pages', cancelInProgress: false },
+    // The workspace CLI's bin isn't linked until after build, so use the root script.
+    cikickCheck: 'pnpm cikick check',
   });
 
-  const build = pages.addJob('build', { runsOn: 'ubuntu-latest', timeoutMinutes: 15 });
-  build.addStep({ uses: 'actions/checkout@v4' });
-  build.addStep({
-    uses: 'actions/setup-node@v4',
-    with: { 'node-version': 22, cache: 'npm', 'cache-dependency-path': 'docs-site/package-lock.json' },
-  });
-  build.addStep({ name: 'Install', run: 'npm ci', workingDirectory: 'docs-site' });
-  build.addStep({ name: 'Build', run: 'npm run build', workingDirectory: 'docs-site' });
-  build.addStep({ uses: 'actions/upload-pages-artifact@v3', with: { path: 'docs-site/dist' } });
+  new ConventionalCommits(app, 'conventional-commits');
 
-  const deploy = pages.addJob('deploy', {
-    runsOn: 'ubuntu-latest',
-    needs: build,
-    timeoutMinutes: 10,
-    environment: { name: 'github-pages', url: '${{ steps.deployment.outputs.page_url }}' },
+  new ReleasePlease(app, 'release', {
+    packages: ['packages/core', 'packages/cli', 'packages/policies', 'packages/fleet', 'packages/workflows'],
   });
-  deploy.addStep({ id: 'deployment', uses: 'actions/deploy-pages@v4' });
 
   applyBaseline(app);
 };
