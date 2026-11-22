@@ -84,7 +84,7 @@ export async function runChecks(app: App, opts: RunChecksOptions): Promise<Findi
     },
   };
   const findings: Finding[] = [];
-  for (const node of [app as IConstruct, ...app.node.findAll()]) {
+  for (const node of app.node.findAll()) {
     for (const check of Checks.of(node).all) {
       const res = await check.run(ctx);
       for (const f of res) {
