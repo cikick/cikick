@@ -1,6 +1,6 @@
 {
   "name": "@cikick/workflows",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Reusable cikick workflow constructs: Node CI, release-please, conventional commit PR titles",
   "homepage": "https://github.com/cikick/cikick",
   "repository": {
