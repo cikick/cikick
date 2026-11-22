@@ -132,21 +132,24 @@ const notes = [
         <caption class="sr-only">How cikick compares with other ways to share GitHub Actions workflows across repositories</caption>
         <thead>
           <tr>
-            <td class="cmp-corner"><span class="sr-only">Approach</span></td>
-            {cols.map((c) => <th scope="col">{c}</th>)}
+            <td class="cmp-corner"><span class="sr-only">Capability</span></td>
+            {rows.map((r) => <th scope="col" class={r.me ? 'cmp-me' : undefined}>{r.name}</th>)}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr class={r.me ? 'cmp-me' : undefined}>
-              <th scope="row">{r.name}</th>
-              {r.cells.map((c) => (
-                <td>
-                  <span class={`mk mk-${c[0]}`} aria-hidden="true">{sym[c[0]]}</span>
-                  <span class="sr-only">{word[c[0]]}{c[1] ? ': ' : ''}</span>
-                  {c[1] && <span class="cmp-q">{c[1]}</span>}
-                </td>
-              ))}
+          {cols.map((c, i) => (
+            <tr>
+              <th scope="row">{c}</th>
+              {rows.map((r) => {
+                const cell = r.cells[i]!;
+                return (
+                  <td class={r.me ? 'cmp-me' : undefined}>
+                    <span class={`mk mk-${cell[0]}`} aria-hidden="true">{sym[cell[0]]}</span>
+                    <span class="sr-only">{word[cell[0]]}{cell[1] ? ': ' : ''}</span>
+                    {cell[1] && <span class="cmp-q">{cell[1]}</span>}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
