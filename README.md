@@ -9,14 +9,15 @@ CDK-style workflow manager for GitHub Actions, distributed as npm packages.
 - **Migrate**: packages ship versioned codemods; `npx cikick update` runs them when Renovate bumps a version
 - **Fleet**: `cikick-fleet` over repos _you select_ — inventory, settings drift, secret age policy, multi-repo secret rotation
 
-| Package                                      |                                                                                      |
-| -------------------------------------------- | ------------------------------------------------------------------------------------ |
-| [`@cikick/core`](packages/core)              | constructs, synth, lockfile, aspects, checks, managed files, secrets, migrations API |
-| [`@cikick/cli`](packages/cli)                | `cikick synth \| check \| lock \| update \| migrate \| secrets \| init`              |
-| [`@cikick/policies`](packages/policies)      | stock aspects/checks, `applyBaseline(app)`                                           |
-| [`@cikick/fleet`](packages/fleet)            | `cikick-fleet select \| inventory \| settings \| secrets \| report`                  |
-| [`examples/wf-node-ci`](examples/wf-node-ci) | example shared workflow package with a migration                                     |
-| [`examples/consumer`](examples/consumer)     | example repo consuming it, with generated output committed                           |
+| Package                                      |                                                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [`@cikick/core`](packages/core)              | constructs, synth, lockfile, aspects, checks, managed files, secrets, migrations API      |
+| [`@cikick/cli`](packages/cli)                | `cikick synth \| check \| lock \| update \| migrate \| secrets \| init`                   |
+| [`@cikick/policies`](packages/policies)      | stock aspects/checks, `applyBaseline(app)`                                                |
+| [`@cikick/workflows`](packages/workflows)    | reusable constructs: `NodeCi`, `ReleasePlease`, `ConventionalCommits` (used by this repo) |
+| [`@cikick/fleet`](packages/fleet)            | `cikick-fleet select \| inventory \| settings \| secrets \| report`                       |
+| [`examples/wf-node-ci`](examples/wf-node-ci) | example shared workflow package with a migration                                          |
+| [`examples/consumer`](examples/consumer)     | example repo consuming it, with generated output committed                                |
 
 ```ts
 // cikick.config.ts
@@ -36,6 +37,8 @@ In CI: `npx cikick check` fails on drift or policy errors. In Renovate: `postUpg
 Docs site source: [docs-site/](docs-site) (Astro, standalone; `cd docs-site && npm ci && npm run build`).
 
 ## Develop
+
+Commits on `main` follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:` …). PRs are squash-merged and the PR title is checked in CI; release-please derives versions and changelogs from it.
 
 ```bash
 pnpm install && pnpm build && pnpm test

@@ -10,6 +10,7 @@
     "packages/core": {},
     "packages/cli": {},
     "packages/policies": {},
-    "packages/fleet": {}
+    "packages/fleet": {},
+    "packages/workflows": {}
   }
 }

@@ -16,6 +16,7 @@
     "@cikick/cli": "workspace:*",
     "@cikick/core": "workspace:*",
     "@cikick/policies": "workspace:*",
+    "@cikick/workflows": "workspace:*",
     "@types/node": "^22.10.0",
     "oxfmt": "0.79.0",
     "oxlint": "1.94.0",

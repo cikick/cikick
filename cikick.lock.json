@@ -8,6 +8,10 @@
       "resolvedAt": "2026-11-22T10:55:40.347Z",
       "sha": "49933ea5288caeca8642d1e84afbd3f7d6820020"
     },
+    "amannn/action-semantic-pull-request@v5": {
+      "resolvedAt": "2026-11-22T11:39:40.219Z",
+      "sha": "e32d7e603df1aa1ba07e981f2a23455dee596825"
+    },
     "googleapis/release-please-action@v4": {
       "resolvedAt": "2026-11-22T11:31:30.465Z",
       "sha": "5c625bfb5d1ff62eadeeb3772007f7f66fdcf071"

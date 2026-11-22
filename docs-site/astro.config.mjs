@@ -68,6 +68,7 @@ export default defineConfig({
             'docs/reference/fleet-config',
             'docs/reference/core',
             'docs/reference/policies',
+            'docs/reference/workflows',
           ],
         },
       ],
