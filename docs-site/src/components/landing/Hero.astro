@@ -1,0 +1,46 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const prs = [
+  { r: 'acme/api', n: 412, what: 'config + ci.yml + lock' },
+  { r: 'acme/web', n: 188, what: 'config + ci.yml + lock' },
+  { r: 'acme/billing', n: 95, what: 'config + ci.yml + lock' },
+  { r: 'acme/auth', n: 301, what: 'config + ci.yml + lock' },
+  { r: 'acme/search', n: 57, what: 'config + ci.yml + lock' },
+];
+---
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap hero-in">
+    <div class="hero-text">
+    <p class="eyebrow">For platform &amp; DevEx teams with many repos <br /><span class="hero-pill">v0.1 · pre-release · not yet on npm</span></p>
+    <h1 id="hero-title">CDK for <span class="grad">GitHub&nbsp;Actions</span>.</h1>
+    <p class="lede">
+      <strong>Ship a CI change to 80 repos as one release.</strong>{" "}
+      Write workflows as TypeScript, publish them as an npm package, and let Renovate deliver every change, breaking ones included,
+      as a migrated, SHA-pinned PR in each repo. Stop using it and the committed YAML keeps working.
+    </p>
+    <div class="cta-row">
+      <a class="btn" href="#quickstart">Run the example (from source)</a>
+      <a class="btn btn-ghost" href={`${base}/docs/concepts/constructs-and-synth/`}>How it works</a>
+    </div>
+    </div>
+    <figure class="hero-card" data-anim id="hero-anim" aria-label="One package release fans out into pull requests in five repositories, each with a passing check">
+      <div class="code-win" aria-hidden="true">
+        <div class="win-bar"><span></span><span></span><span></span><b>npm publish → Renovate</b></div>
+        <div class="hero-rel st" style="--d:100"><code>@acme/wf-node-ci</code><b>2.0.0</b></div>
+        <ul class="hero-prs">
+          {prs.map((p, i) => (
+            <li class="hero-pr st" style={`--d:${600 + i * 300}`}>
+              <code class="hero-repo">{p.r}</code>
+              <span class="hero-num">PR #{p.n}</span>
+              <span class="hero-what">{p.what}</span>
+              <span class="hero-ck">✓ check</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <figcaption class="sr-only">
+        A single release of <code>@acme/wf-node-ci</code> 2.0.0 fans out into pull requests in acme/api, acme/web, acme/billing, acme/auth and acme/search. Each PR changes the config, the generated ci.yml and the lockfile, and passes <code>cikick check</code>.
+      </figcaption>
+    </figure>
+  </div>
+</section>

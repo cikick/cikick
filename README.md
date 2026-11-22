@@ -33,7 +33,7 @@ export default (app) => {
 
 In CI: `npx cikick check` fails on drift or policy errors. In Renovate: `postUpgradeTasks: ["npx cikick update"]`.
 
-Design: [docs/PLAN.md](docs/PLAN.md).
+Docs site source: [docs-site/](docs-site) (Astro, standalone; `cd docs-site && npm ci && npm run build`). Design: [docs/PLAN.md](docs/PLAN.md).
 
 ## Develop
 

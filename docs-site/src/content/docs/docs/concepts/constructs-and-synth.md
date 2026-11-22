@@ -1,0 +1,100 @@
+---
+title: Constructs and synth
+description: How cikick.config.ts becomes .github/workflows/*.yml - the construct tree, the default-export contract, and what `cikick synth` does step by step.
+---
+
+Workflow YAML is a poor place to put logic: you cannot type-check it, share a job between repos without copy-paste, or apply a rule to every workflow at once. cikick models workflows as a tree of TypeScript objects (constructs, from the `constructs` npm package), runs your code, and renders the tree to YAML. The YAML is an output artifact that you commit; the source of truth is `cikick.config.ts` plus the packages it imports.
+
+## The construct tree
+
+```text
+App                     root, created by the CLI (id "")
+ ├─ NodeCi "node"       any Construct you write: a plain organiser, renders nothing itself
+ │   └─ Workflow "ci"   -> .github/workflows/ci.yml
+ │       ├─ Job "build"
+ │       │   ├─ Step "step-0"
+ │       │   └─ Step "step-1"
+ │       └─ Job "test"
+ └─ ManagedFile ...     -> any repo file (see Managed files)
+```
+
+- `App` takes `{ outdir?, lock? }`. `app.synth()` is shorthand for the `synth()` function with `repoDir` defaulting to `outdir` or the cwd.
+- `Workflow(scope, id, props)` renders to `.github/workflows/<id>.yml`. The file name comes from the construct's own `id`, not its path in the tree. In the example consumer, `new NodeCi(app, 'node', ...)` creates an inner `Workflow` with id `ci`, so the file is `ci.yml`.
+- `workflow.addJob(id, props)` creates a `Job`; the id is the job key in YAML. `needs` accepts job ids or `Job` objects.
+- `job.addStep(props)` creates a `Step` with a generated id (`step-0`, `step-1`, ...). A job with `uses` (a reusable-workflow call) renders `with`/`secrets` and no `steps`.
+- `ActionRef.of('owner/repo[/path]@ref')` parses an action reference. You rarely build one by hand: a `uses` string on a step or job is parsed automatically, and an invalid spec such as `actions/checkout` (no `@ref`) throws when the step is created. Local (`./...`) and `docker://` references are kept as plain strings and never resolved.
+
+Props are camelCase and typed (`pullRequest`, `timeoutMinutes`, `cancelInProgress`, `runsOn`); the renderer converts them to GitHub's names (`pull_request`, `timeout-minutes`, `cancel-in-progress`, `runs-on`). Keys inside `with:` and `env:` pass through unchanged.
+
+## The config contract
+
+The CLI looks for `cikick.config.ts`, `.mts`, `.js`, `.mjs` (in that order) in the repo directory and loads it with jiti, so TypeScript needs no build step. The default export must be one of:
+
+```ts title="cikick.config.ts"
+import { App, Workflow } from '@cikick/core';
+
+// 1. a function (app) => void | Promise<void>  (what `cikick init` writes)
+export default (app: App) => {
+  const ci = new Workflow(app, 'ci', {
+    name: 'CI',
+    on: { push: { branches: ['main'] }, pullRequest: {} },
+    permissions: { contents: 'read' },
+  });
+  const job = ci.addJob('test', { runsOn: 'ubuntu-latest', timeoutMinutes: 15 });
+  job.addStep({ uses: 'actions/checkout@v4' });
+  job.addStep({ run: 'echo hello from cikick' });
+};
+
+// 2. or an App instance:  export default new App({ ... });
+```
+
+Anything else fails with `default export must be an App or a function (app) => void`. With a function, the CLI creates the `App` (`outdir` = the repo directory) and registers the checks shipped by installed cikick packages before calling your function. See [Checks](/cikick/docs/concepts/checks/).
+
+## What synth does
+
+`cikick synth` (see the [CLI reference](/cikick/docs/reference/cikick-cli/)) runs `synth(app, opts)` and then writes the result. In order:
+
+1. **Apply aspects.** Walk the tree top-down; every node is visited by the aspects registered on itself and its ancestors. Aspects may mutate props or add nodes. See [Customisation](/cikick/docs/concepts/customisation/).
+2. **Resolve action refs.** Collect every remote `uses` from all workflows. A ref that is already a 40-hex SHA is used as is. Every other ref is looked up by its `owner/repo@ref` key in `cikick.lock.json`; missing keys are resolved (or, with `--frozen`, reported as an error). See [Lockfile and pinning](/cikick/docs/concepts/lockfile-and-pinning/).
+3. **Render.** Each workflow becomes YAML; each `ManagedFile` becomes its content. Two outputs with the same path abort the synth with `Duplicate output path: <path>`.
+4. **Run checks.** Checks see the construct tree, the rendered files and the repo on disk, and return findings. See [Checks](/cikick/docs/concepts/checks/).
+
+The result is `{ files, lock, findings }`. The CLI then writes files (seeded files that already exist are skipped), writes `cikick.lock.json`, prints each finding, and sets exit code 1 if any finding has severity `error`. Files are written even when there are error findings; the exit code is what fails the build.
+
+## What the output looks like
+
+This is the real generated `examples/consumer/.github/workflows/ci.yml` (abridged):
+
+```yaml title=".github/workflows/ci.yml"
+# Generated by cikick — do not edit. Run `npx cikick synth`.
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request: {}
+permissions:
+  contents: read
+jobs:
+  test:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+```
+
+- The first line is the generated header (`# Generated by cikick — do not edit. Run \`npx cikick synth\`.`). `cikick-fleet inventory` uses it to tell generated workflows from hand-written ones.
+- Remote actions render as `owner/repo@<sha> # <original ref>`. The comment is added only when the ref you wrote is not already the SHA, so tools and reviewers can still see which version the SHA stands for.
+
+## Determinism
+
+The same config, packages and lockfile produce the same bytes. Output files are sorted by path, lock keys are sorted, jobs and steps keep construct insertion order, and each renderer emits keys in a fixed order. The only time-dependent value is `resolvedAt` in the lock, which is written when an entry is first resolved and kept afterwards. `cikick check` relies on this: it re-synthesises and compares to what is on disk.
+
+## Gotchas
+
+- **Id collisions.** Two workflows with the same `id` anywhere in the tree collide, because the file name is the id alone. Pick unique workflow ids across everything your packages create.
+- **Aspects run on every synth.** Write them so applying twice is harmless (the stock ones check before changing).
+- **Files are not deleted.** If you remove a construct, its old YAML stays on disk until you delete it (a package migration can do this safely; see [Migrations](/cikick/docs/concepts/migrations/)). `cikick check` will not notice an orphan.
+- **Errors throw early.** Invalid action specs throw while your config runs; managed-file problems (for example an unparsable patch file) throw during rendering. Either way the synth aborts and nothing is written.

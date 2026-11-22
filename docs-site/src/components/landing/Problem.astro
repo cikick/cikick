@@ -1,0 +1,71 @@
+---
+const repos = [
+  { n: 'api', v: 'v4', c: 'ok' },
+  { n: 'web', v: 'v3', c: 'warn' },
+  { n: 'billing', v: 'main', c: 'bad', at: true },
+  { n: 'auth', v: 'v4', c: 'ok' },
+  { n: 'search', v: 'v2', c: 'warn' },
+  { n: 'mobile', v: 'v3', c: 'warn' },
+  { n: 'infra', v: 'main', c: 'bad', at: true },
+  { n: 'docs', v: 'v4', c: 'ok' },
+  { n: 'data', v: '8e5e7a2…', c: 'ok' },
+];
+const secrets = Array.from({ length: 9 }, (_, i) => ({ n: repos[i]!.n, fresh: i === 2 || i === 6 }));
+---
+<section id="problem" class="sec" aria-labelledby="problem-title">
+  <div class="wrap">
+    <p class="eyebrow">The problem</p>
+    <h2 id="problem-title">Your CI is already a fleet.<br />It just isn't managed like one.</h2>
+    <p class="sec-lede">
+      Every repo got its workflow by copying the last one. Then each copy lived its own life.
+    </p>
+
+    <div class="prob-grid">
+      <article class="card card-wide" aria-labelledby="p1">
+        <h3 id="p1">Nine repos, one intent, five spellings</h3>
+        <div class="repo-grid" data-anim id="drift" role="img"
+          aria-label="Nine repositories all containing the same checkout step, which has drifted into five different refs: v4, v3, v2, main, and a pinned sha">
+          {repos.map((r, i) => (
+            <div class="repo" aria-hidden="true">
+              <span class="repo-name">acme/{r.n}</span>
+              <code class="repo-line">uses: actions/checkout@<span class="vstack" style={`--d:${700 + i * 260}`}><span class="v v-old ok">v4</span><span class={`v v-new ${r.c}`}>{r.v}</span></span></code>
+            </div>
+          ))}
+        </div>
+        <ul class="legend" aria-hidden="true">
+          <li><i class="dot ok"></i>current / pinned</li>
+          <li><i class="dot warn"></i>outdated tag</li>
+          <li><i class="dot bad"></i>floating branch</li>
+        </ul>
+        <p class="note">Nobody decided this. It's what copy-paste does over two years. <strong class="note-key">Updating means opening nine PRs by hand, so it doesn't happen.</strong></p>
+      </article>
+
+      <article class="card" aria-labelledby="p2">
+        <h3 id="p2">A new secret value reached 2 of 9 repos</h3>
+        <div class="chips" data-anim id="rot" role="img"
+          aria-label="Nine repositories hold the same NPM_TOKEN secret. A new value has been issued, but only two of them have it; seven still hold the old one.">
+          {secrets.map((s, i) => (
+            <div class="chip" aria-hidden="true">
+              <span class="chip-name">{s.n}</span>
+              <span class="vstack" style={`--d:${900 + i * 120}`}>
+                <span class={`v v-old bad${s.fresh ? '' : ' keep'}`}>old key</span>
+                {s.fresh && <span class="v v-new ok">new value</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p class="note">Distributing the new value is a ticket per repo, tracked in someone's spreadsheet. Seven repos keep running on the key you meant to retire.</p>
+      </article>
+
+      <article class="card tag-card" aria-labelledby="p3">
+        <h3 id="p3">A moving tag is a supply-chain hole</h3>
+        <p class="note">
+          This is not hypothetical: in March 2025 the widely used
+          <code>tj-actions/changed-files</code> action was compromised and its existing version tags were re-pointed at a commit that
+          printed secrets into workflow logs (CVE-2025-30066). Workflows pinned to a full commit SHA kept running the commit they had been reviewed against.
+          The fix is old advice: pin by SHA. cikick does it at every synth and records it in a lockfile; <code>cikick lock --refresh</code> moves the pins forward.
+        </p>
+      </article>
+    </div>
+  </div>
+</section>

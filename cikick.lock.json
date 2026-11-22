@@ -1,0 +1,22 @@
+{
+  "actions": {
+    "actions/checkout@v4": {
+      "resolvedAt": "2026-11-22T10:55:40.347Z",
+      "sha": "11d5960a326750d5838078e36cf38b85af677262"
+    },
+    "actions/deploy-pages@v4": {
+      "resolvedAt": "2026-11-22T10:55:40.347Z",
+      "sha": "d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e"
+    },
+    "actions/setup-node@v4": {
+      "resolvedAt": "2026-11-22T10:55:40.347Z",
+      "sha": "49933ea5288caeca8642d1e84afbd3f7d6820020"
+    },
+    "actions/upload-pages-artifact@v3": {
+      "resolvedAt": "2026-11-22T10:55:40.347Z",
+      "sha": "56afc609e74202658d3ffba0e8f6dda462b719fa"
+    }
+  },
+  "packages": {},
+  "version": 1
+}

@@ -1,0 +1,47 @@
+---
+const term = [
+  `<span class="ln st" style="--d:200"><span class="p">$</span> cikick-fleet secrets report --group publishers</span>`,
+  `<span class="ln st" style="--d:500"><span class="bad-t">stale</span>           acme/api  NPM_TOKEN  212d (max 90)</span>`,
+  `<span class="ln st" style="--d:650"><span class="bad-t">stale</span>           acme/web  NPM_TOKEN  212d (max 90)</span>`,
+  `<span class="ln st" style="--d:800"><span class="dim">… 7 more</span></span>`,
+  `<span class="ln st" style="--d:1300"><span class="p">$</span> cikick-fleet secrets rotate NPM_TOKEN --group publishers \\</span>`,
+  `<span class="ln st" style="--d:1400">    --value-from-env NEW_NPM_TOKEN</span>`,
+  `<span class="ln st" style="--d:1700"><span class="dim">Dry run: nothing written. Re-run with --yes to rotate.</span></span>`,
+  `<span class="ln st" style="--d:2300"><span class="p">$</span> … --yes</span>`,
+  `<span class="ln st" style="--d:2600"><span class="ok-t">updated</span>  acme/api NPM_TOKEN</span>`,
+  `<span class="ln st" style="--d:2750"><span class="ok-t">updated</span>  acme/web NPM_TOKEN</span>`,
+  `<span class="ln st" style="--d:2900"><span class="dim">… 7 more</span></span>`,
+].join('');
+---
+<section id="fleet" class="sec sec-alt" aria-labelledby="fleet-title">
+  <div class="wrap">
+    <p class="eyebrow">Fleet</p>
+    <h2 id="fleet-title">One command across the repos you chose. Nothing else.</h2>
+    <p class="sec-lede">
+      <code>cikick-fleet</code> works from a <code>fleet.json</code> allowlist that <em>you</em> select. It never means "everything in the org".
+      Inventory, settings drift, secret age and rotation all run against that list. Anything outside it is refused.
+    </p>
+
+    <div class="fleet fleet-one" data-anim id="fleetanim" role="group" aria-labelledby="fleet-cap">
+      <pre class="code term sm" tabindex="0" aria-label="Example cikick-fleet terminal output" set:html={term}></pre>
+    </div>
+    <p id="fleet-cap" class="sr-only">
+      A terminal: a secrets report lists stale NPM_TOKEN secrets, then a dry-run and a confirmed rotate push a new value to each selected repository.
+    </p>
+
+    <p class="sec-lede">
+      <code>cikick-fleet</code> pushes a value you provide to every selected repo or environment and reports its age. Minting and revoking at the provider (npm, cloud) is still yours.
+    </p>
+
+    <ul class="points">
+      <li><b>Explicit selection.</b> <code>cikick-fleet select</code> lists repos you administer; you pick. Commands refuse any repo outside <code>fleet.json</code>.</li>
+      <li><b>Dry-run by default.</b> <code>settings apply</code> and <code>secrets rotate</code> write nothing without <code>--yes</code>.</li>
+      <li><b>Values never printed.</b> Read from an env var or stdin, sealed with libsodium to each repo's public key, then PUT to GitHub.</li>
+      <li><b>Access it needs.</b> A token in <code>GITHUB_TOKEN</code> or <code>GH_TOKEN</code>, and admin on each selected repo (<code>select</code> only lists repos where <code>permissions.admin</code> is true).</li>
+      <li><b>Rulesets are report-only.</b> <code>settings apply</code> writes repo settings, but rulesets are only reported as drift, never changed.</li>
+      <li><b>Fleet-wide visibility.</b> <code>cikick-fleet inventory</code> and <code>report --html</code> show which repos run which shared-package version, and how many action references are unpinned.</li>
+      <li><b>Why not org-level secrets?</b> Org secrets share one value across repos and have no age policy. Use them when one value for all selected repos is fine. <code>cikick-fleet</code> covers per-repo and environment-scoped secrets, repos across several owners, and tells you how old each value is.</li>
+      <li><b>Policies, not vibes.</b> <code>secretPolicies</code> give each secret a max age; <code>secrets report</code> exits non-zero when something is stale or missing.</li>
+    </ul>
+  </div>
+</section>

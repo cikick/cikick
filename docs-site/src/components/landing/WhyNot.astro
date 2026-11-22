@@ -1,0 +1,198 @@
+---
+type Mark = 'y' | 'p' | 'n' | 'u' | 'na';
+type Cell = [Mark, string?];
+
+const cols = [
+  'Shared across repos',
+  'Per-repo customisation',
+  'Breaking-change migrations',
+  'SHA pinning',
+  'Lockfile',
+  'Secret distribution / fleet ops',
+  'Static analysis',
+  'No build step',
+  'Maturity',
+];
+
+const rows: { name: string; me?: boolean; cells: Cell[] }[] = [
+  { name: 'cikick', me: true, cells: [
+    ['y', 'npm packages'],
+    ['y', 'props, addOverride, aspects'],
+    ['y', 'versioned codemods via cikick update'],
+    ['y', 'at synth (refresh is manual: lock --refresh)'],
+    ['y', 'cikick.lock.json'],
+    ['p', 'age report + push a value to selected repos; no mint/revoke'],
+    ['p', '5 stock checks + custom Checks'],
+    ['n', 'synth step'],
+    ['n', '0.1, unpublished'],
+  ] },
+  { name: 'Reusable workflows', cells: [
+    ['y', 'native'],
+    ['p', 'inputs, secrets, job-level settings; not steps'],
+    ['n'],
+    ['p', 'caller pins @sha by hand'],
+    ['n'], ['n'], ['n'], ['y'],
+    ['y', 'GA'],
+  ] },
+  { name: 'Composite actions', cells: [
+    ['p', 'steps only'],
+    ['p', 'inputs only'],
+    ['n'],
+    ['p', 'by hand'],
+    ['n'], ['n'], ['n'], ['y'],
+    ['y', 'GA'],
+  ] },
+  { name: 'Org rulesets / required workflows', cells: [
+    ['y', 'enforced centrally'],
+    ['n', 'same workflow everywhere'],
+    ['n'],
+    ['p', 'by hand in the one file'],
+    ['n'], ['n'], ['n'], ['y'],
+    ['y', 'plan availability: unverified'],
+  ] },
+  { name: 'Org-level secrets', cells: [
+    ['y'],
+    ['p', 'select repos; one value'],
+    ['na'], ['na'], ['na'],
+    ['p', 'one value, many repos; no age policy'],
+    ['na'], ['y'], ['y'],
+  ] },
+  { name: 'Renovate / Dependabot', cells: [
+    ['n', 'per-repo copies'],
+    ['na'],
+    ['n', 'bumps strings'],
+    ['y', 'Renovate digest pinning; Dependabot bumps SHAs (pinning on its own: unverified)'],
+    ['n'], ['n'], ['n'], ['y'], ['y'],
+  ] },
+  { name: 'File sync / multi-repo PR tools', cells: [
+    ['p', 'copy files out'],
+    ['p', 'via templating (unverified)'],
+    ['p', 'scripted, not versioned'],
+    ['n'], ['n'], ['n'], ['n'], ['y'],
+    ['p', 'varies'],
+  ] },
+  { name: 'projen', cells: [
+    ['y', 'npm packages'],
+    ['y', 'escape hatches'],
+    ['p', 're-synth; breaks surface as compile errors, no shipped codemods (unverified)'],
+    ['u', 'unverified'],
+    ['u', 'unverified'],
+    ['n'], ['n'],
+    ['n', 'synth step'],
+    ['y', 'widely used'],
+  ] },
+  { name: 'github-workflows-kt', cells: [
+    ['p', 'Kotlin scripts/libs'],
+    ['y', 'code'],
+    ['n', '(unverified)'],
+    ['u', 'unverified'],
+    ['n', '(unverified)'],
+    ['n'],
+    ['y', 'typed action inputs'],
+    ['n', 'script step'],
+    ['p', 'active, niche'],
+  ] },
+  { name: 'zizmor / actionlint', cells: [
+    ['na', 'analysis only'],
+    ['na'],
+    ['n'],
+    ['p', 'flags unpinned uses (zizmor)'],
+    ['n'], ['n'],
+    ['y', 'deeper than cikick'],
+    ['y'], ['y'],
+  ] },
+];
+
+const sym: Record<Mark, string> = { y: '✓', p: '◐', n: '✗', u: '?', na: '–' };
+const word: Record<Mark, string> = { y: 'Yes', p: 'Partial', n: 'No', u: 'Unverified', na: 'Not applicable' };
+
+const notes = [
+  { name: 'Reusable workflows', text: 'Use them when the pipeline is the same and a few inputs differ; native, no tooling, and the simplest thing that works. Callers can pass inputs, secrets and job-level settings (<code>permissions</code>, <code>strategy</code>, <code>concurrency</code>, <code>if</code>, <code>needs</code>) but cannot add or change a step inside the called jobs. Each caller pins its own <code>@ref</code> and needs a bump PR; orgs that use <code>@main</code> skip those PRs, at the cost of unreviewed changes going live in every repo at once. A cikick Job can <code>uses:</code> a reusable workflow and cikick pins its ref.' },
+  { name: 'Composite actions', text: 'Use them to bundle steps (setup, build, deploy) behind one <code>uses:</code>. They cannot define jobs, triggers, permissions or <code>needs</code>, so the workflow skeleton is still copy-pasted. Keep them; cikick generates the skeleton that calls them.' },
+  { name: 'Org rulesets / required workflows', text: 'Use them when you need central enforcement with no per-repo PR and every repo should run the same workflow. They do not offer per-repo customisation or migrations. Check plan availability for your org.' },
+  { name: 'Workflow templates', text: 'Starter workflows in an org\'s <code>.github</code> repo help new repos begin from a good default. They are copied once, so later changes do not reach existing repos.' },
+  { name: 'Org-level secrets', text: 'Use them when one value should reach many repos in an org; scope it to selected repos. Environment-scoped secrets, per-repo values and repos outside one org are where it stops. cikick-fleet pushes a value you provide and reports age; minting and revoking at the provider is still yours.' },
+  { name: 'Renovate / Dependabot', text: 'Use them if your problem is only stale action versions; Renovate can pin digests (<code>helpers:pinGitHubActionDigests</code>). They bump strings and do not know your shared workflow renamed an input. cikick uses Renovate as the delivery truck, then runs <code>cikick update</code>.' },
+  { name: 'File sync / multi-repo PR tools', text: 'repo-file-sync-action, multi-gitter and turbolift copy files or script changes across repos and open PRs. As far as we can tell they do not version migrations or pin actions, but they need no build step and suit a one-off change.' },
+  { name: 'projen', text: 'The closest relative: TypeScript-defined, synthesized config with GitHub workflow support, far broader and more mature. Pick one generator per repo; if projen already works for you, you may not need cikick. As far as we know it ships no migrations inside shared packages.' },
+  { name: 'github-workflows-kt', text: 'A Kotlin DSL with typed action bindings, so <code>with:</code> inputs are checked at compile time. A real advantage in a Kotlin shop that cikick lacks. An alternative, not a companion; choose by language.' },
+  { name: 'zizmor / actionlint', text: 'Dedicated static analysis, deeper than cikick\'s stock checks. They find problems but do not generate or update workflows. Run them on cikick\'s generated YAML too.' },
+];
+---
+<section id="why-not" class="sec" aria-labelledby="why-title">
+  <div class="wrap">
+    <p class="eyebrow">Why not just…</p>
+    <h2 id="why-title">Honest comparisons.</h2>
+    <p class="sec-lede">
+      Most of these are better than cikick at the thing they do. cikick earns its place only when you need <em>shared, versioned, migratable</em> workflows across many repos.
+    </p>
+
+    <div class="cmp-scroll" role="region" aria-label="Comparison of cikick with alternatives (scrollable table)" tabindex="0">
+      <table class="cmp">
+        <caption class="sr-only">How cikick compares with other ways to share GitHub Actions workflows across repositories</caption>
+        <thead>
+          <tr>
+            <td class="cmp-corner"><span class="sr-only">Capability</span></td>
+            {rows.map((r) => <th scope="col" class={r.me ? 'cmp-me' : undefined}>{r.name}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {cols.map((c, i) => (
+            <tr>
+              <th scope="row">{c}</th>
+              {rows.map((r) => {
+                const cell = r.cells[i]!;
+                return (
+                  <td class={r.me ? 'cmp-me' : undefined}>
+                    <span class={`mk mk-${cell[0]}`} aria-hidden="true">{sym[cell[0]]}</span>
+                    <span class="sr-only">{word[cell[0]]}{cell[1] ? ': ' : ''}</span>
+                    {cell[1] && <span class="cmp-q">{cell[1]}</span>}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <ul class="cmp-legend" aria-label="Legend">
+      <li><span class="mk mk-y" aria-hidden="true">✓</span> yes</li>
+      <li><span class="mk mk-p" aria-hidden="true">◐</span> partial</li>
+      <li><span class="mk mk-n" aria-hidden="true">✗</span> no</li>
+      <li><span class="mk mk-u" aria-hidden="true">?</span> unverified</li>
+      <li><span class="mk mk-na" aria-hidden="true">–</span> not applicable</li>
+    </ul>
+    <p class="cmp-foot">
+      Third-party cells reflect our reading of their docs as of Nov 2026; cells marked ? or "unverified" are ones we have not confirmed.{" "}
+      <a href="https://github.com/cikick/cikick/issues">Corrections welcome.</a>
+    </p>
+
+    <h3 class="cmp-notes-h">Notes: use it when…</h3>
+    <ul class="cmp-notes">
+      {notes.map((n) => (
+        <li><strong>{n.name}.</strong> <span set:html={n.text}></span></li>
+      ))}
+    </ul>
+
+    <div class="fit">
+      <div class="card">
+        <h3>cikick is a good fit when</h3>
+        <ul>
+          <li>You have roughly 10+ repos with similar pipelines, and a team that can own a shared package.</li>
+          <li>Breaking changes to shared CI happen, and you want them as migrations, not announcements.</li>
+          <li>Auditors or security want every action pinned and every secret on a rotation clock.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>It is probably the wrong call when</h3>
+        <ul>
+          <li>You have a handful of repos. Reusable workflows plus Renovate are less machinery.</li>
+          <li>Nobody wants a build step between editing CI and running it. cikick adds one.</li>
+          <li>Many repos are Go, Python or Java. Every consumer repo needs Node and a <code>package.json</code> with cikick as a dev dependency.</li>
+          <li>You need a mature, battle-tested ecosystem today. cikick is version 0.1.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
