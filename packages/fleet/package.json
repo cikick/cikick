@@ -1,6 +1,6 @@
 {
   "name": "@cikick/fleet",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "Fleet control plane for a user-selected set of repositories: inventory, settings drift, secret age, rotation, report",
   "bin": {
     "cikick-fleet": "dist/bin.mjs"

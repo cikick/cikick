@@ -7,7 +7,7 @@ export default (app: App) => {
     permissions: { contents: 'read' },
   });
   const job = ci.addJob('test', { runsOn: 'ubuntu-latest', timeoutMinutes: 15 });
-  job.addStep({ uses: 'actions/checkout@v4' });
+  job.addStep({ uses: 'actions/checkout@v7' });
   job.addStep({ run: 'echo hello from cikick' });
 };
 `;

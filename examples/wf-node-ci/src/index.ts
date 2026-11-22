@@ -39,10 +39,10 @@ export class NodeCi extends Construct {
     });
 
     const setup = (job: Job, registry?: boolean) => {
-      job.addStep({ uses: 'actions/checkout@v4' });
-      if (pm === 'pnpm') job.addStep({ uses: 'pnpm/action-setup@v4' });
+      job.addStep({ uses: 'actions/checkout@v7' });
+      if (pm === 'pnpm') job.addStep({ uses: 'pnpm/action-setup@v6' });
       job.addStep({
-        uses: 'actions/setup-node@v4',
+        uses: 'actions/setup-node@v7',
         with: {
           'node-version': nodeVersion,
           cache: pm,

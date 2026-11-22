@@ -9,7 +9,7 @@ export default (app: App) => {
     test: 'pnpm test -- --coverage',
     release: {},
     extraSteps: [
-      { name: 'Upload coverage', uses: 'actions/upload-artifact@v4', with: { name: 'coverage', path: 'coverage' } },
+      { name: 'Upload coverage', uses: 'actions/upload-artifact@v7', with: { name: 'coverage', path: 'coverage' } },
     ],
   });
 
@@ -22,7 +22,7 @@ export default (app: App) => {
   // Custom workflow with an environment-scoped secret
   const deploy = new Workflow(app, 'deploy', { name: 'Deploy', on: { workflowDispatch: {} } });
   const job = deploy.addJob('deploy', { runsOn: 'ubuntu-latest', environment: 'production' });
-  job.addStep({ uses: 'actions/checkout@v4' });
+  job.addStep({ uses: 'actions/checkout@v7' });
   job.addStep({
     name: 'Deploy',
     run: './scripts/deploy.sh',
