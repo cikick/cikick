@@ -148,7 +148,12 @@ export class ReleasePlease extends Construct {
         'set -euo pipefail',
         'out="$RUNNER_TEMP/packages"; mkdir -p "$out"',
         `for p in $(jq -r '.[]' <<<"$PATHS_RELEASED"); do (cd "$p" && ${pm} pack --pack-destination "$out"); done`,
-        `for f in "$out"/*.tgz; do npm publish "$f" --access ${p.access ?? 'public'}; done`,
+        // Idempotent: skip versions already on the registry so a re-run after a partial failure can finish the rest.
+        'for f in "$out"/*.tgz; do',
+        '  spec=$(tar -xOf "$f" package/package.json | jq -r \'.name + "@" + .version\')',
+        '  if npm view "$spec" version >/dev/null 2>&1; then echo "skip $spec (already published)"; continue; fi',
+        `  npm publish "$f" --access ${p.access ?? 'public'}`,
+        'done',
       ].join('\n'),
     });
     return job;
