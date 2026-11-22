@@ -39,9 +39,9 @@ export class NodeCi extends Construct {
       runsOn: 'ubuntu-latest',
       timeoutMinutes: props.timeoutMinutes ?? 15,
     }));
-    job.addStep({ uses: 'actions/checkout@v4' });
-    if (pm === 'pnpm') job.addStep({ uses: 'pnpm/action-setup@v4' });
-    job.addStep({ uses: 'actions/setup-node@v4', with: { 'node-version': props.nodeVersion ?? 22, cache: pm } });
+    job.addStep({ uses: 'actions/checkout@v7' });
+    if (pm === 'pnpm') job.addStep({ uses: 'pnpm/action-setup@v6' });
+    job.addStep({ uses: 'actions/setup-node@v7', with: { 'node-version': props.nodeVersion ?? 22, cache: pm } });
     job.addStep({ name: 'Install', run: pm === 'pnpm' ? 'pnpm install --frozen-lockfile' : 'npm ci' });
     const commands = props.commands ?? { Build: run('build'), Test: pm === 'pnpm' ? 'pnpm test' : 'npm test' };
     for (const [name, cmd] of Object.entries(commands)) job.addStep({ name, run: cmd });

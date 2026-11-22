@@ -9,7 +9,7 @@ import { migrations, checks } from '../src/cikick.js';
 
 const lock = () => {
   const l = emptyLockfile();
-  for (const k of ['actions/checkout@v4', 'actions/setup-node@v4', 'pnpm/action-setup@v4'])
+  for (const k of ['actions/checkout@v7', 'actions/setup-node@v7', 'pnpm/action-setup@v6'])
     l.actions[k] = { sha: 'c'.repeat(40), resolvedAt: '2026-01-01T00:00:00Z' };
   return l;
 };
@@ -22,7 +22,7 @@ describe('NodeCi', () => {
     const r = await synth(app, { repoDir: dir(), lock: lock(), frozen: true });
     expect(r.files.map((f) => f.path)).toEqual(['.github/workflows/ci.yml', '.nvmrc', 'renovate.json']);
     const ci = r.files[0]!.content;
-    expect(ci).toContain(`pnpm/action-setup@${'c'.repeat(40)} # v4`);
+    expect(ci).toContain(`pnpm/action-setup@${'c'.repeat(40)} # v6`);
     expect(ci).toContain('node-version: 24');
     expect(ci).toContain('${{ secrets.NPM_TOKEN }}');
     expect(r.files[1]!.content).toBe('24\n');

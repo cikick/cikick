@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import config from '../cikick.config.js';
 
 const dir = new URL('..', import.meta.url).pathname;
-const ACTIONS = ['actions/checkout@v4', 'actions/setup-node@v4', 'actions/upload-artifact@v4', 'pnpm/action-setup@v4'];
+const ACTIONS = ['actions/checkout@v7', 'actions/setup-node@v7', 'actions/upload-artifact@v7', 'pnpm/action-setup@v6'];
 
 describe('consumer config', () => {
   it('synths with a frozen lock and no error findings', async () => {
@@ -26,7 +26,7 @@ describe('consumer config', () => {
     const ci = r.files[0]!.content;
     expect(ci).toContain('runs-on: ubuntu-24.04');
     expect(ci).toContain('- self-hosted');
-    expect(ci).toContain(`actions/upload-artifact@${'3'.repeat(40)} # v4`);
+    expect(ci).toContain(`actions/upload-artifact@${'3'.repeat(40)} # v7`);
     expect(ci).toContain('permissions:'); // from baseline aspect
     expect(ci).toContain('timeout-minutes: 30');
     expect(r.files[1]!.content).toContain('environment: production');

@@ -79,7 +79,7 @@ export class ReleasePlease extends Construct {
     if (props.appToken) {
       job.addStep({
         id: 'app-token',
-        uses: 'actions/create-github-app-token@v2',
+        uses: 'actions/create-github-app-token@v3',
         with: {
           'app-id': `\${{ vars.${props.appToken.appIdVariable ?? 'RELEASE_APP_ID'} }}`,
           'private-key': secret(this, props.appToken.privateKeySecret ?? 'RELEASE_APP_PRIVATE_KEY', {
@@ -91,7 +91,7 @@ export class ReleasePlease extends Construct {
     }
     job.addStep({
       id: 'release',
-      uses: 'googleapis/release-please-action@v4',
+      uses: 'googleapis/release-please-action@v5',
       with: token ? { token } : undefined,
     });
   }

@@ -10,12 +10,12 @@ import { ConventionalCommits, NodeCi, ReleasePlease } from '../src/index.js';
 const lock = () => {
   const l = emptyLockfile();
   for (const k of [
-    'actions/checkout@v4',
-    'actions/setup-node@v4',
-    'pnpm/action-setup@v4',
-    'googleapis/release-please-action@v4',
-    'actions/create-github-app-token@v2',
-    'amannn/action-semantic-pull-request@v5',
+    'actions/checkout@v7',
+    'actions/setup-node@v7',
+    'pnpm/action-setup@v6',
+    'googleapis/release-please-action@v5',
+    'actions/create-github-app-token@v3',
+    'amannn/action-semantic-pull-request@v6',
   ])
     l.actions[k] = { sha: 'a'.repeat(40), resolvedAt: '2026-01-01T00:00:00Z' };
   return l;

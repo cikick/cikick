@@ -29,7 +29,7 @@ export class ConventionalCommits extends Construct {
     if (props.types) w.types = props.types.join('\n');
     if (props.requireScope) w.requireScope = true;
     this.job.addStep({
-      uses: 'amannn/action-semantic-pull-request@v5',
+      uses: 'amannn/action-semantic-pull-request@v6',
       env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' },
       with: Object.keys(w).length ? w : undefined,
     });
