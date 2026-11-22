@@ -2,6 +2,12 @@
   "name": "@cikick/policies",
   "version": "0.5.1",
   "description": "Stock aspects and checks for cikick: pinned actions, explicit permissions, timeouts, deprecations",
+  "homepage": "https://github.com/cikick/cikick",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cikick/cikick.git",
+    "directory": "packages/policies"
+  },
   "files": [
     "dist"
   ],

@@ -44,6 +44,7 @@ Workflow `release-please` on pushes to `main`, plus `release-please-config.json`
 | `branch`         | `'main'`  |                                                                                           |
 | `appToken`       | none      | `{ appIdVariable?, privateKeySecret? }`, see below                                        |
 | `config`         | `{}`      | extra top-level keys for `release-please-config.json`                                     |
+| `publish`        | none      | `{ packageManager?, build?, access?, npmTokenSecret? }`: adds a `publish` job (below)     |
 
 The job exposes `releases_created` and `paths_released` outputs. Gate a publish job on them:
 
@@ -51,6 +52,8 @@ The job exposes `releases_created` and `paths_released` outputs. Gate a publish 
 const rp = new ReleasePlease(app, 'release');
 rp.workflow.addJob('publish', { runsOn: 'ubuntu-latest', needs: rp.job, if: rp.releasesCreated /* ... */ });
 ```
+
+**Publishing.** With `publish`, a `publish` job runs when releases were created: it builds, packs each released path (`pnpm pack` rewrites `workspace:` ranges) and runs `npm publish` on Node 24 with npm ≥ 11.5 and `id-token: write`, so packages with a [trusted publisher](https://docs.npmjs.com/trusted-publishers) configured on npmjs.com publish via OIDC with provenance and no stored token. Point the trusted publisher at this repository and the `release-please.yml` workflow. `npmTokenSecret` is a fallback for packages that don't exist on npm yet (trusted publishers can only be added to existing packages).
 
 **Token.** By default the workflow uses `GITHUB_TOKEN` with `contents: write` and `pull-requests: write`. That needs the repository (and organisation) setting _Allow GitHub Actions to create and approve pull requests_, and release PRs opened with `GITHUB_TOKEN` do not trigger other workflows, so CI will not run on them. Pass `appToken: {}` to mint a GitHub App token instead (`actions/create-github-app-token`, app ID from the `RELEASE_APP_ID` variable, key from the `RELEASE_APP_PRIVATE_KEY` secret). The App needs read & write on Contents and Pull requests; the workflow's own token drops to `contents: read`.
 

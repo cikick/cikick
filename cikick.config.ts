@@ -21,6 +21,8 @@ export default (app: App) => {
 
   new ReleasePlease(app, 'release', {
     packages: ['packages/core', 'packages/cli', 'packages/policies', 'packages/fleet', 'packages/workflows'],
+    // npm trusted publishing (OIDC): each package has a trusted publisher on npmjs.com, no token.
+    publish: {},
   });
 
   applyBaseline(app);

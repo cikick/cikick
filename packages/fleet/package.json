@@ -2,6 +2,12 @@
   "name": "@cikick/fleet",
   "version": "0.5.1",
   "description": "Fleet control plane for a user-selected set of repositories: inventory, settings drift, secret age, rotation, report",
+  "homepage": "https://github.com/cikick/cikick",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cikick/cikick.git",
+    "directory": "packages/fleet"
+  },
   "bin": {
     "cikick-fleet": "dist/bin.mjs"
   },

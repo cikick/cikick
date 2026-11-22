@@ -24,6 +24,22 @@ export interface ReleasePleaseProps {
   appToken?: ReleasePleaseAppToken;
   /** Extra keys merged into `release-please-config.json` (top level). */
   config?: Record<string, unknown>;
+  /** Add a `publish` job that publishes the packages released by this run to npm. */
+  publish?: ReleasePleasePublish;
+}
+
+export interface ReleasePleasePublish {
+  /** Default `pnpm`. pnpm rewrites `workspace:` ranges when packing. */
+  packageManager?: 'npm' | 'pnpm';
+  /** Build command run before packing. Default `<pm> run build`; `false` to skip. */
+  build?: string | false;
+  /** `npm publish --access`. Default `public`. */
+  access?: 'public' | 'restricted';
+  /**
+   * Fallback secret for `NODE_AUTH_TOKEN`. Publishing uses npm trusted publishing (OIDC) when the package
+   * has a trusted publisher configured on npmjs.com; a token is only needed for packages that don't exist yet.
+   */
+  npmTokenSecret?: string;
 }
 
 /**
@@ -34,6 +50,8 @@ export interface ReleasePleaseProps {
 export class ReleasePlease extends Construct {
   readonly workflow: Workflow;
   readonly job: Job;
+  /** The `publish` job, when `publish` is set. */
+  readonly publishJob?: Job;
   /** Expression, usable in a dependent job's `if:`, true when this run created releases. */
   readonly releasesCreated = "needs.release-please.outputs.releases_created == 'true'";
 
@@ -94,5 +112,45 @@ export class ReleasePlease extends Construct {
       uses: 'googleapis/release-please-action@v5',
       with: token ? { token } : undefined,
     });
+    if (props.publish) this.publishJob = this.addPublishJob(props.publish);
+  }
+
+  private addPublishJob(p: ReleasePleasePublish): Job {
+    const pm = p.packageManager ?? 'pnpm';
+    const job = this.workflow.addJob('publish', {
+      runsOn: 'ubuntu-latest',
+      needs: this.job,
+      if: this.releasesCreated,
+      timeoutMinutes: 15,
+      permissions: { contents: 'read', idToken: 'write' },
+    });
+    job.addStep({ uses: 'actions/checkout@v7' });
+    if (pm === 'pnpm') job.addStep({ uses: 'pnpm/action-setup@v6' });
+    // Node 24 + npm >= 11.5 for trusted publishing (OIDC) and automatic provenance.
+    job.addStep({
+      uses: 'actions/setup-node@v7',
+      with: { 'node-version': 24, cache: pm, 'registry-url': 'https://registry.npmjs.org' },
+    });
+    job.addStep({ name: 'Update npm', run: 'npm install -g npm@^11.5.1' });
+    job.addStep({ name: 'Install', run: pm === 'pnpm' ? 'pnpm install --frozen-lockfile' : 'npm ci' });
+    if (p.build !== false) job.addStep({ name: 'Build', run: p.build ?? `${pm} run build` });
+    const env: Record<string, string> = { PATHS_RELEASED: '${{ needs.release-please.outputs.paths_released }}' };
+    if (p.npmTokenSecret)
+      env.NODE_AUTH_TOKEN = secret(this, p.npmTokenSecret, {
+        provider: 'npm',
+        maxAgeDays: 90,
+        description: 'npm token fallback for first publishes',
+      });
+    job.addStep({
+      name: 'Publish released packages',
+      env,
+      run: [
+        'set -euo pipefail',
+        'out="$RUNNER_TEMP/packages"; mkdir -p "$out"',
+        `for p in $(jq -r '.[]' <<<"$PATHS_RELEASED"); do (cd "$p" && ${pm} pack --pack-destination "$out"); done`,
+        `for f in "$out"/*.tgz; do npm publish "$f" --access ${p.access ?? 'public'}; done`,
+      ].join('\n'),
+    });
+    return job;
   }
 }
