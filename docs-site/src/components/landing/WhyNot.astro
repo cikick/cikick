@@ -1,41 +1,40 @@
 ---
-const alts = [
-  {
-    name: 'Reusable workflows',
-    better: 'Native to GitHub: no build step, no extra tooling, runs server-side. For "same pipeline, a few inputs" this is the simplest thing that works, and you should use it.',
-    gap: 'The caller gets inputs and nothing else: you cannot add a step to one job, change one runner, or inject a policy. Each caller still pins its own <code>@ref</code> and still needs a bump PR.',
-    together: 'Compatible. A cikick Job can <code>uses:</code> a reusable workflow, and cikick pins its ref.',
-  },
-  {
-    name: 'Composite actions',
-    better: 'The right tool for bundling steps (setup, build, deploy) behind one <code>uses:</code>. Native, versioned, shareable, zero tooling.',
-    gap: 'They are steps only. They cannot define jobs, triggers, permissions, matrices or <code>needs</code>, so the workflow skeleton is still copy-pasted around them.',
-    together: 'Compatible. Keep your composite actions; cikick generates the skeleton that calls them.',
-  },
-  {
-    name: 'Dependabot / Renovate alone',
-    better: 'Excellent at noticing new versions and opening PRs, and Renovate can pin action digests (<code>helpers:pinGitHubActionDigests</code>). If your problem is only "stale action versions", this may be enough.',
-    gap: 'They bump strings. They do not know your shared workflow renamed an input, and they do not keep nine copies of a workflow structurally the same.',
-    together: 'cikick uses Renovate as the delivery truck: it bumps the package, then runs <code>cikick update</code> to migrate and re-synth.',
-  },
-  {
-    name: 'projen',
-    better: 'The closest relative: TypeScript-defined, synthesized config, with GitHub workflow support. It is far broader (whole-project scaffolding, release automation) and far more mature, with a big community.',
-    gap: 'It manages the whole project, which is more than some teams want to adopt. As far as we know it has no equivalent of migrations shipped inside a shared package, a per-action SHA lockfile, or a multi-repo control plane. Those are what cikick adds.',
-    together: 'Pick one generator per repo. If projen already runs your repos and works, you may not need cikick.',
-  },
-  {
-    name: 'github-workflows-kt',
-    better: 'A Kotlin DSL with typed bindings for popular actions, so <code>with:</code> inputs are checked at compile time. In a Kotlin shop that is a real advantage cikick does not have: our <code>uses</code>/<code>with</code> are plain strings and records.',
-    gap: 'It generates workflows but, as far as we know, does not ship package migrations, a lockfile, or fleet tooling. And it needs Kotlin scripting in a mostly-JS org.',
-    together: 'Alternatives, not companions. Choose by your team\'s language.',
-  },
-  {
-    name: 'zizmor / actionlint',
-    better: 'Dedicated static analysis. zizmor audits security issues in workflows in more depth than cikick\'s small stock policy set; actionlint catches syntax and expression mistakes. Both work on any YAML.',
-    gap: 'They find problems. They do not generate, share or update workflows, so fixing 40 repos is still on you.',
-    together: 'Run them on cikick\'s generated YAML too. Defence in depth.',
-  },
+type Cell = [mark: 'y' | 'p' | 'n' | 'u' | 'na', text: string];
+const cols = ['Shared across repos', 'Per-repo customisation', 'Breaking-change migrations', 'SHA pinning', 'Lockfile', 'Secret distribution / fleet ops', 'Static analysis', 'No build step', 'Maturity'];
+const rows: { name: string; us?: boolean; cells: Cell[] }[] = [
+  { name: 'cikick', us: true, cells: [
+    ['y', 'npm packages'], ['y', 'props, addOverride, aspects'], ['y', 'versioned codemods via cikick update'],
+    ['y', 'at synth; refreshing is manual (lock --refresh)'], ['y', 'cikick.lock.json'],
+    ['p', 'age report, pushes a value you provide to selected repos; no mint/revoke'], ['p', '5 stock checks + custom Checks'],
+    ['n', 'synth step'], ['n', '0.1, unpublished'] ] },
+  { name: 'Reusable workflows', cells: [
+    ['y', 'native'], ['p', 'inputs, secrets, job-level settings; not steps'], ['n', ''], ['p', 'caller pins by hand'], ['n', ''], ['n', ''], ['n', ''], ['y', ''], ['y', 'GA'] ] },
+  { name: 'Composite actions', cells: [
+    ['p', 'steps only'], ['p', 'inputs only'], ['n', ''], ['p', 'by hand'], ['n', ''], ['n', ''], ['n', ''], ['y', ''], ['y', 'GA'] ] },
+  { name: 'Org rulesets / required workflows', cells: [
+    ['y', 'enforced centrally'], ['n', 'same workflow everywhere'], ['n', ''], ['p', 'by hand in the one file'], ['n', ''], ['n', ''], ['n', ''], ['y', ''], ['y', 'plan availability: unverified'] ] },
+  { name: 'Org-level secrets', cells: [
+    ['y', ''], ['p', 'select repos; one value'], ['na', ''], ['na', ''], ['na', ''], ['p', 'one value, many repos; no age policy'], ['na', ''], ['y', ''], ['y', ''] ] },
+  { name: 'Renovate / Dependabot', cells: [
+    ['n', 'per-repo copies'], ['na', ''], ['n', 'bumps strings'], ['y', 'Renovate digest pinning'], ['n', ''], ['n', ''], ['n', ''], ['y', ''], ['y', ''] ] },
+  { name: 'File-sync / multi-repo PR tools', cells: [
+    ['p', 'copy files out'], ['u', 'via templating'], ['p', 'scripted, not versioned'], ['n', ''], ['n', ''], ['n', ''], ['n', ''], ['y', ''], ['p', 'varies'] ] },
+  { name: 'projen', cells: [
+    ['y', 'npm packages'], ['y', 'escape hatches'], ['u', 're-synth; shipped codemods not known'], ['u', ''], ['u', ''], ['n', ''], ['n', ''], ['n', 'synth step'], ['y', 'widely used'] ] },
+  { name: 'github-workflows-kt', cells: [
+    ['p', 'Kotlin scripts/libs'], ['y', 'code'], ['u', 'not known'], ['u', ''], ['u', ''], ['n', ''], ['y', 'typed action inputs'], ['n', 'script step'], ['p', 'active, niche'] ] },
+  { name: 'zizmor / actionlint', cells: [
+    ['na', 'analysis only'], ['na', ''], ['n', ''], ['p', 'zizmor flags unpinned uses'], ['n', ''], ['n', ''], ['y', 'deeper than cikick'], ['y', ''], ['y', ''] ] },
+];
+const sym = { y: '✓', p: '~', n: '✗', u: '?', na: '–' } as const;
+const word = { y: 'Yes', p: 'Partly', n: 'No', u: 'Unverified', na: 'Not applicable' } as const;
+const notes = [
+  ['Reusable workflows', 'the right default for "same pipeline, a few inputs". Pointing callers at <code>@main</code> avoids bump PRs but ships unreviewed changes to every repo at once; pinning avoids that but means a bump PR per caller.'],
+  ['Composite actions', 'keep them; they bundle steps. cikick generates the workflow skeleton that calls them.'],
+  ['Renovate', 'cikick uses it as the delivery truck: bump the package, then <code>cikick update</code> migrates and re-synths.'],
+  ['Rulesets / org secrets', 'if central enforcement or one shared value is all you need, use them and skip cikick.'],
+  ['projen / github-workflows-kt', 'alternatives, not companions: pick one generator per repo, by language and scope.'],
+  ['zizmor / actionlint', 'run them on cikick\'s generated YAML too.'],
 ];
 ---
 <section id="why-not" class="sec" aria-labelledby="why-title">
@@ -43,18 +42,30 @@ const alts = [
     <p class="eyebrow">Why not just…</p>
     <h2 id="why-title">Honest comparisons.</h2>
     <p class="sec-lede">
-      Most of these are better than cikick at the thing they do. cikick earns its place only when you need <em>shared, versioned, migratable</em> workflows across many repos.
+      Most of these beat cikick at the thing they do. cikick earns its place only when you need <em>shared, versioned, migratable</em> workflows across many repos, and it costs you a build step and a pre-release dependency.
     </p>
-    <div class="alts">
-      {alts.map((a) => (
-        <article class="alt">
-          <h3>{a.name}</h3>
-          <p><span class="tag ok">Better at</span> <span set:html={a.better}></span></p>
-          <p><span class="tag bad">Where it stops</span> <span set:html={a.gap}></span></p>
-          <p><span class="tag neutral">With cikick</span> <span set:html={a.together}></span></p>
-        </article>
-      ))}
+    <div class="cmp-wrap" role="region" aria-label="Comparison table, scrollable" tabindex="0">
+      <table class="cmp">
+        <caption class="sr-only">cikick compared with alternatives across nine capabilities. Symbols: check is yes, tilde is partly, cross is no, question mark is unverified, dash is not applicable.</caption>
+        <thead>
+          <tr><th scope="col">Tool</th>{cols.map((c) => <th scope="col">{c}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr class={r.us ? 'us' : ''}>
+              <th scope="row">{r.name}</th>
+              {r.cells.map(([m, t]) => (
+                <td class={`c-${m}`}><span class="mk" aria-hidden="true">{sym[m]}</span><span class="sr-only">{word[m]}{t ? ': ' : ''}</span>{t && <span class="ct">{t}</span>}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
+    <p class="note">Third-party cells reflect our reading of their docs as of Nov 2026. Cells marked <b>?</b> are ones we have not confirmed. Corrections welcome via a <a href="https://github.com/cikick/cikick/issues">GitHub issue</a>.</p>
+    <ul class="notes">
+      {notes.map(([n, t]) => <li><b>{n}:</b> <span set:html={t}></span></li>)}
+    </ul>
     <div class="fit">
       <div class="card">
         <h3>cikick is a good fit when</h3>
@@ -68,7 +79,7 @@ const alts = [
         <h3>It is probably the wrong call when</h3>
         <ul>
           <li>You have a handful of repos. Reusable workflows plus Renovate are less machinery.</li>
-          <li>Nobody wants a build step between editing CI and running it. cikick adds one.</li>
+          <li>Nobody wants a build step between editing CI and running it. cikick adds one, and needs Node in every repo.</li>
           <li>You need a mature, battle-tested ecosystem today. cikick is version 0.1.</li>
         </ul>
       </div>

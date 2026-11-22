@@ -42,7 +42,7 @@ const secrets = Array.from({ length: 9 }, (_, i) => ({ n: repos[i]!.n, fresh: i 
       </article>
 
       <article class="card" aria-labelledby="p2">
-        <h3 id="p2">A secret rotated in 2 of 9 repos</h3>
+        <h3 id="p2">A new secret value reached 2 of 9 repos</h3>
         <div class="chips" data-anim id="rot" role="img"
           aria-label="Nine repositories hold the same NPM_TOKEN secret. After a rotation, only two of them have the new value; seven still hold the old one.">
           {secrets.map((s, i) => (
@@ -55,7 +55,7 @@ const secrets = Array.from({ length: 9 }, (_, i) => ({ n: repos[i]!.n, fresh: i 
             </div>
           ))}
         </div>
-        <p class="note">Rotation is a ticket per repo, tracked in someone's spreadsheet. Seven repos keep running on the key you meant to retire.</p>
+        <p class="note">Rotation is a ticket per repo, tracked in someone's spreadsheet. Seven repos keep running on the key you meant to retire. (Org-level secrets help when one org and one value fit; per-repo and environment secrets are where this bites.)</p>
         <button class="replay" type="button" data-replay="rot">Replay</button>
       </article>
 
@@ -80,7 +80,7 @@ const secrets = Array.from({ length: 9 }, (_, i) => ({ n: repos[i]!.n, fresh: i 
           Illustrative SHAs. This is not hypothetical: in March 2025 the widely used
           <code>tj-actions/changed-files</code> action was compromised and its existing version tags were re-pointed at a commit that
           printed secrets into workflow logs (CVE-2025-30066). Workflows pinned to a full commit SHA kept running the commit they had been reviewed against.
-          The fix is old advice, pin by SHA. The problem is doing it, and <em>keeping the pins current</em>, in every repo by hand.
+          The fix is old advice: pin by SHA. The problem is doing it consistently, in every repo, by hand.
         </p>
         <button class="replay" type="button" data-replay="tag">Replay</button>
       </article>

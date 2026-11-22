@@ -51,8 +51,8 @@ const term = [
 
     <ul class="points">
       <li><b>Explicit selection.</b> <code>cikick-fleet select</code> lists repos you administer; you pick. Commands refuse any repo outside <code>fleet.json</code>.</li>
-      <li><b>Dry-run by default.</b> <code>settings apply</code> and <code>secrets rotate</code> write nothing without <code>--yes</code>.</li>
-      <li><b>Values never printed.</b> Read from an env var or stdin, sealed with libsodium to each repo's public key, then PUT to GitHub.</li>
+      <li><b>Dry-run by default.</b> <code>settings apply</code> and <code>secrets rotate</code> write nothing without <code>--yes</code>. Needs a <code>GITHUB_TOKEN</code>/<code>GH_TOKEN</code> with admin on the selected repos; rulesets are reported, not changed.</li>
+      <li><b>Distributes a value, doesn't mint one.</b> You provide the new value (env var or stdin); it is sealed with libsodium to each repo's public key and PUT to GitHub, never printed. Creating and revoking the credential at the provider is still yours.</li>
       <li><b>Policies, not vibes.</b> <code>secretPolicies</code> give each secret a max age; <code>secrets report</code> exits non-zero when something is stale or missing.</li>
     </ul>
   </div>

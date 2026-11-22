@@ -62,7 +62,7 @@ const lock = stagger([
     <p class="sec-lede">
       Like AWS CDK, but for workflows. You describe CI as typed TypeScript objects; <code>cikick synth</code> walks the
       construct tree and writes plain <code>.github/workflows/*.yml</code>, resolves every action to a commit SHA, and records it in
-      <code>cikick.lock.json</code>. GitHub still just runs YAML. Nothing cikick-specific executes in your CI.
+      <code>cikick.lock.json</code>. The generated YAML runs without cikick; <code>cikick check</code> is an optional CI gate. Stop using cikick and the committed YAML keeps working.
     </p>
 
     <div class="pipe" data-anim id="pipe" role="group" aria-labelledby="pipe-cap">
