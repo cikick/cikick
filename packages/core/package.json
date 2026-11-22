@@ -2,6 +2,12 @@
   "name": "@cikick/core",
   "version": "0.5.1",
   "description": "CDK-style constructs, synth, lockfile, aspects, checks for GitHub Actions workflows",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cikick/cikick.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/cikick/cikick",
   "files": [
     "dist"
   ],
