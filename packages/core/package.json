@@ -1,0 +1,31 @@
+{
+  "name": "@cikick/core",
+  "version": "0.1.0",
+  "description": "CDK-style constructs, synth, lockfile, aspects, checks for GitHub Actions workflows",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "constructs": "^10.8.1",
+    "semver": "^7.8.6",
+    "ts-morph": "^28.0.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.8.0"
+  }
+}
