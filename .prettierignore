@@ -3,5 +3,7 @@
 **/cikick.lock.json
 **/.nvmrc
 **/renovate.json
+release-please-config.json
+.release-please-manifest.json
 pnpm-lock.yaml
 dist

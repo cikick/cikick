@@ -33,12 +33,12 @@ export default (app) => {
 
 In CI: `npx cikick check` fails on drift or policy errors. In Renovate: `postUpgradeTasks: ["npx cikick update"]`.
 
-Docs site source: [docs-site/](docs-site) (Astro, standalone; `cd docs-site && npm ci && npm run build`). Design: [docs/PLAN.md](docs/PLAN.md).
+Docs site source: [docs-site/](docs-site) (Astro, standalone; `cd docs-site && npm ci && npm run build`).
 
 ## Develop
 
 ```bash
 pnpm install && pnpm build && pnpm test
 pnpm typecheck && pnpm lint && pnpm format:check
-pnpm lint && pnpm format:check
+pnpm cikick synth   # regenerate .github/workflows + release-please config from cikick.config.ts
 ```
