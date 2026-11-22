@@ -84,6 +84,15 @@ importers:
         specifier: ^0.7.14
         version: 0.7.14
 
+  packages/policies:
+    dependencies:
+      '@cikick/core':
+        specifier: workspace:*
+        version: link:../core
+      constructs:
+        specifier: ^10.8.1
+        version: 10.8.1
+
 packages:
 
   '@esbuild/aix-ppc64@0.21.5':
