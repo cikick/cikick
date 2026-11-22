@@ -1,6 +1,6 @@
 {
   "name": "@cikick/cli",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "cikick command line: synth, check, lock, update, migrate",
   "homepage": "https://github.com/cikick/cikick",
   "repository": {
