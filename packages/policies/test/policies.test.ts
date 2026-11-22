@@ -11,6 +11,7 @@ import {
   applyBaseline,
   deprecatedAction,
   fileContains,
+  noCancelInProgressDeploy,
   noPullRequestTargetCheckout,
   noScriptInjection,
   requireExplicitPermissions,
@@ -146,6 +147,52 @@ describe('checks', () => {
     const f = (await run(app, [noScriptInjection])).findings;
     expect(f).toHaveLength(2);
     expect(f.every((x) => x.severity === 'warn')).toBe(true);
+  });
+  it('noScriptInjection covers inputs, github.event.inputs and base_ref', async () => {
+    const { app, job } = mk();
+    job.addStep({ run: 'deploy ${{ inputs.target }}' });
+    job.addStep({ run: 'deploy ${{ github.event.inputs.target }}' });
+    job.addStep({ run: 'echo ${{ github.base_ref }}' });
+    job.addStep({ run: 'echo ${{ github.head_ref }}' });
+    job.addStep({ run: 'echo ${{ needs.a.outputs.inputs_x }} ${{ steps.inputs.outputs.v }} ${{ github.ref_name }}' });
+    job.addStep({ run: 'echo "$T"', env: { T: '${{ inputs.target }}' } });
+    const f = (await run(app, [noScriptInjection])).findings;
+    expect(f.map((x) => x.message.match(/`([^`]+)`/)![1])).toEqual([
+      'inputs.target',
+      'github.event.inputs.target',
+      'github.base_ref',
+      'github.head_ref',
+    ]);
+  });
+  it('noCancelInProgressDeploy flags cancellable deploy jobs only', async () => {
+    const mkDeploy = (concurrency: any, jobConcurrency?: any) => {
+      const { app, wf, job } = mk();
+      wf.props.concurrency = concurrency;
+      job.props.concurrency = jobConcurrency;
+      job.addStep({ run: 'pnpm exec wrangler deploy' });
+      return app;
+    };
+    const flagged = async (app: App) => (await run(app, [noCancelInProgressDeploy])).findings;
+    expect(await flagged(mkDeploy({ group: 'g', cancelInProgress: true }))).toHaveLength(1);
+    expect((await flagged(mkDeploy({ group: 'g', cancelInProgress: true })))[0]!.severity).toBe('warn');
+    expect(await flagged(mkDeploy(undefined, { group: 'g', cancelInProgress: '${{ github.ref != 1 }}' }))).toHaveLength(
+      1,
+    );
+    expect(await flagged(mkDeploy({ group: 'g', cancelInProgress: false }))).toEqual([]);
+    expect(
+      await flagged(mkDeploy({ group: 'g', cancelInProgress: "${{ github.event_name == 'pull_request' }}" })),
+    ).toEqual([]);
+    expect(await flagged(mkDeploy(undefined))).toEqual([]);
+    // An environment alone marks a deploy job.
+    const env = mk();
+    env.wf.props.concurrency = { group: 'g', cancelInProgress: true };
+    env.job.props.environment = 'production';
+    expect(await flagged(env.app)).toHaveLength(1);
+    // A plain CI job is not a deploy job.
+    const ci = mk();
+    ci.wf.props.concurrency = { group: 'g', cancelInProgress: true };
+    ci.job.addStep({ run: 'pnpm test' });
+    expect(await flagged(ci.app)).toEqual([]);
   });
   it('requireTimeout', async () => {
     const { app, wf, job } = mk();

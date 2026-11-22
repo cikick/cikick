@@ -89,6 +89,7 @@ Before 2027-03-01 a repo with `.nvmrc` below 20 sees `WARN  [@acme/wf-node-ci:nv
 | `require-explicit-permissions`    | error    | A job with no `permissions` when the workflow declares none either.                                                                                                                                                                               |
 | `no-pull-request-target-checkout` | error    | A `pull_request_target` workflow whose `actions/checkout` step's `ref`/`repository` points at PR head code (matches `head`, `github.event.pull_request`, `github.head_ref`, `refs/pull/`).                                                        |
 | `no-script-injection`             | warn     | An attacker-controllable expression (issue/PR title or body, branch names, commit messages, and similar) interpolated directly into a `run:` script. The message suggests passing it through `env`.                                               |
+| `no-cancel-in-progress-deploy`    | warn     | A deploy job (environment, wrangler deploy/migrations) whose concurrency sets `cancel-in-progress`; cancelling a deploy half way leaves code and migrations out of step.                                                                          |
 | `require-timeout`                 | warn     | A job without `timeout-minutes` (reusable-workflow calls excluded).                                                                                                                                                                               |
 
 Check factories:
