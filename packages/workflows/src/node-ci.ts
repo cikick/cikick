@@ -4,6 +4,7 @@ import {
   type Permissions,
   type StepProps,
   type WorkflowCallTrigger,
+  type WorkflowInput,
   type WorkflowTriggers,
 } from '@cikick/core';
 import type { PullRequestTrigger, PushTrigger } from '@cikick/core';
@@ -17,6 +18,8 @@ export interface NodeCiTriggers {
   pullRequest?: boolean | PullRequestTrigger;
   /** Make the workflow callable from other workflows (`on: workflow_call`). Default `false`. */
   workflowCall?: boolean | WorkflowCallTrigger;
+  /** Allow manual runs (`on: workflow_dispatch`). Default `false`. Needed for a `CloudflareDeploy` with `dispatch` and `into`. */
+  workflowDispatch?: boolean | { inputs?: Record<string, WorkflowInput> };
 }
 
 export interface NodeCiArtifact {
@@ -37,6 +40,10 @@ export interface NodeCiJob {
   env?: Record<string, string>;
   /** Uploaded with `actions/upload-artifact` after the commands. */
   artifacts?: NodeCiArtifact[];
+  /** Job condition (`if:`), e.g. `github.event_name == 'pull_request'`. */
+  if?: string;
+  /** Job permissions; replace the workflow's permissions for this job. */
+  permissions?: Permissions;
 }
 
 export interface NodeCiProps {
@@ -78,6 +85,8 @@ export interface NodeCiProps {
   registryAuth?: GitHubPackagesAuth;
   /** `actions/checkout` `fetch-depth` (`0` = full history). Default: the action's (1). */
   fetchDepth?: number;
+  /** Name of the install step. Default `Install`. */
+  installStepName?: string;
 }
 
 /**
@@ -105,6 +114,7 @@ export class NodeCi extends Construct {
     const pr = t.pullRequest ?? true;
     if (pr) on.pullRequest = pr === true ? {} : pr;
     if (t.workflowCall) on.workflowCall = t.workflowCall === true ? {} : t.workflowCall;
+    if (t.workflowDispatch) on.workflowDispatch = t.workflowDispatch === true ? {} : t.workflowDispatch;
     if (Object.keys(on).length === 0) throw new Error('NodeCi: at least one trigger must be enabled');
 
     const auth = props.registryAuth ? resolveRegistryAuth(this, props.registryAuth) : undefined;
@@ -136,6 +146,8 @@ export class NodeCi extends Construct {
         name: spec.name,
         runsOn: 'ubuntu-latest',
         timeoutMinutes: props.timeoutMinutes ?? 15,
+        if: spec.if,
+        permissions: spec.permissions,
         env: Object.keys(env).length ? env : undefined,
       });
       this.jobs[jobId] = job;
@@ -145,6 +157,7 @@ export class NodeCi extends Construct {
         nodeVersion: props.nodeVersion ?? 22,
         fetchDepth: props.fetchDepth,
         auth,
+        installStepName: props.installStepName,
       }))
         job.addStep(s);
       const cwd = spec.workingDirectory ?? props.workingDirectory;
@@ -152,7 +165,7 @@ export class NodeCi extends Construct {
       if (check !== false && isFirst)
         job.addStep({ name: 'cikick check', run: check === true ? 'npx cikick check' : check, workingDirectory: cwd });
       for (const a of spec.artifacts ?? [])
-        job.addStep({ uses: 'actions/upload-artifact@v4', with: { name: a.name, path: a.path } });
+        job.addStep({ uses: 'actions/upload-artifact@v7', with: { name: a.name, path: a.path } });
       if (!props.jobs) for (const s of props.extraSteps ?? []) job.addStep(s);
     }
     this.job = first!;

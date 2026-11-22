@@ -12,7 +12,7 @@ const lock = () => {
   for (const k of [
     'actions/checkout@v7',
     'actions/setup-node@v7',
-    'actions/upload-artifact@v4',
+    'actions/upload-artifact@v7',
     'pnpm/action-setup@v6',
     'googleapis/release-please-action@v5',
   ])

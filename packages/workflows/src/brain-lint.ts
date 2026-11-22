@@ -1,10 +1,23 @@
 import { Workflow, secret, type Job, type StepProps } from '@cikick/core';
 import { Construct } from 'constructs';
-import { grantPermission, shellSafe } from './support.js';
+import {
+  grantPermission,
+  resolveRegistryAuth,
+  shellSafe,
+  toolchainSteps,
+  type GitHubPackagesAuth,
+  type PackageManager,
+} from './support.js';
 
 export interface BrainCliOptions {
-  /** Pinned CLI version, e.g. `0.14.0`. Never floating. */
-  cliVersion: string;
+  /** Pinned CLI version, e.g. `0.14.0`. Never floating. Required unless `fromSource` is set. */
+  cliVersion?: string;
+  /**
+   * Run this local command instead of installing the CLI, e.g. `pnpm brain lint --quiet` in the repository that
+   * builds the CLI. The job must already have the toolchain (see `toolchainSteps`; standalone, `BrainLint` adds it).
+   * Not combinable with `cliVersion`, `registry`, `package` or `tokenSecret`; `command` is ignored.
+   */
+  fromSource?: string;
   /**
    * Where the CLI comes from. `'npm'` (default): `@craftvalue/delivery-brain` on npmjs.
    * `'github'`: `@craftvalueorg/delivery-brain` on GitHub Packages, installed with the workflow's `GITHUB_TOKEN`
@@ -27,6 +40,17 @@ const DEFAULT_PACKAGE = { npm: '@craftvalue/delivery-brain', github: '@craftvalu
 
 /** Steps installing the pinned brain CLI and running the lint (and extra commands). Reusable in any job. */
 export function brainCliSteps(scope: Construct, o: BrainCliOptions): StepProps[] {
+  if (o.fromSource !== undefined) {
+    if (o.cliVersion || o.registry || o.package || o.tokenSecret)
+      throw new Error('BrainLint: `fromSource` cannot be combined with cliVersion, registry, package or tokenSecret');
+    const local: StepProps[] = [];
+    if (o.nodeVersion !== undefined)
+      local.push({ uses: 'actions/setup-node@v7', with: { 'node-version': o.nodeVersion } });
+    local.push({ name: 'brain lint', run: o.fromSource });
+    for (const [name, run] of Object.entries(o.extraCommands ?? {})) local.push({ name, run });
+    return local;
+  }
+  if (!o.cliVersion) throw new Error('BrainLint: `cliVersion` is required unless `fromSource` is set');
   const registry = o.registry ?? 'npm';
   const pkg = shellSafe(o.package ?? DEFAULT_PACKAGE[registry], 'package');
   const version = shellSafe(o.cliVersion, 'cliVersion');
@@ -62,6 +86,10 @@ export interface BrainLintProps extends BrainCliOptions {
   branches?: string[];
   /** Job timeout when standalone. Default 10. */
   timeoutMinutes?: number;
+  /** Standalone with `fromSource` only: package manager of the toolchain. Default `pnpm`. */
+  packageManager?: PackageManager;
+  /** Standalone with `fromSource` only: private package registry for the install; adds `packages: read`. */
+  registryAuth?: GitHubPackagesAuth;
 }
 
 /**
@@ -87,11 +115,32 @@ export class BrainLint extends Construct {
         concurrency: { group: '${{ github.workflow }}-${{ github.ref }}', cancelInProgress: true },
       });
       this.job = this.workflow.addJob('lint', { runsOn: 'ubuntu-latest', timeoutMinutes: props.timeoutMinutes ?? 10 });
-      this.job.addStep({ uses: 'actions/checkout@v7' });
+      if (props.fromSource === undefined) this.job.addStep({ uses: 'actions/checkout@v7' });
+      else {
+        // A local command needs the repository's toolchain (installed dependencies), not just a checkout.
+        const auth = props.registryAuth ? resolveRegistryAuth(this, props.registryAuth) : undefined;
+        if (auth) grantPermission(this.job, 'packages', 'read');
+        for (const s of toolchainSteps({
+          packageManager: props.packageManager,
+          nodeVersion: props.nodeVersion,
+          auth,
+        }))
+          this.job.addStep(s);
+      }
     }
     if (github) grantPermission(this.job, 'packages', 'read');
-    const { job: _job, name: _n, branches: _b, timeoutMinutes: _t, ...cli } = props;
-    const opts = props.job ? cli : { nodeVersion: 22, ...cli };
+    const {
+      job: _job,
+      name: _n,
+      branches: _b,
+      timeoutMinutes: _t,
+      packageManager: _p,
+      registryAuth: _r,
+      ...cli
+    } = props;
+    // Standalone: `fromSource` already got Node from the toolchain; the CLI install gets its own setup-node.
+    const standaloneCli = !props.job && props.fromSource === undefined;
+    const opts = standaloneCli ? { nodeVersion: 22, ...cli } : props.job ? cli : { ...cli, nodeVersion: undefined };
     for (const s of brainCliSteps(this, opts)) this.job.addStep(s);
   }
 }

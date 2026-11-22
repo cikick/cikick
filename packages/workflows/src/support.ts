@@ -58,16 +58,26 @@ export function grantPermission(job: Job, name: string, level: PermissionLevel):
 export type PackageManager = 'npm' | 'pnpm';
 
 export interface ToolchainOptions {
-  packageManager: PackageManager;
-  nodeVersion: number;
+  /** Default `pnpm` (uses `pnpm/action-setup`, version from `packageManager` in package.json). */
+  packageManager?: PackageManager;
+  /** Node.js major version. Default 22. */
+  nodeVersion?: number;
+  /** `actions/checkout` `fetch-depth` (`0` = full history). Default: the action's. */
   fetchDepth?: number;
+  /** `actions/checkout` `ref`. */
   checkoutRef?: string;
+  /** Registry authentication, from `resolveRegistryAuth(scope, { scope: '@org' })`. */
   auth?: ResolvedRegistryAuth;
+  /** Name of the install step. Default `Install`. */
+  installStepName?: string;
 }
 
-/** checkout, (pnpm setup), setup-node, install. */
-export function toolchainSteps(o: ToolchainOptions): StepProps[] {
-  const pm = o.packageManager;
+/**
+ * checkout, (pnpm setup), setup-node with dependency caching, install (with optional registry auth).
+ * The same steps `NodeCi` and `CloudflareDeploy` start with; use it to build custom workflows.
+ */
+export function toolchainSteps(o: ToolchainOptions = {}): StepProps[] {
+  const pm = o.packageManager ?? 'pnpm';
   const checkoutWith: Record<string, unknown> = {};
   if (o.fetchDepth !== undefined) checkoutWith['fetch-depth'] = o.fetchDepth;
   if (o.checkoutRef !== undefined) checkoutWith.ref = o.checkoutRef;
@@ -77,10 +87,10 @@ export function toolchainSteps(o: ToolchainOptions): StepProps[] {
   if (pm === 'pnpm') steps.push({ uses: 'pnpm/action-setup@v6' });
   steps.push({
     uses: 'actions/setup-node@v7',
-    with: { 'node-version': o.nodeVersion, cache: pm, ...o.auth?.setupNode },
+    with: { 'node-version': o.nodeVersion ?? 22, cache: pm, ...o.auth?.setupNode },
   });
   steps.push({
-    name: 'Install',
+    name: o.installStepName ?? 'Install',
     run: pm === 'pnpm' ? 'pnpm install --frozen-lockfile' : 'npm ci',
     env: o.auth?.env,
   });

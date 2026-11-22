@@ -31,6 +31,24 @@ export interface ReleasePleasePackageConfig {
 }
 
 export interface ReleasePleaseProps {
+  /** Workflow name. Default `Release`. */
+  name?: string;
+  /** Workflow file id (`.github/workflows/<file>.yml`). Default `release-please`. The job id stays `release-please`. */
+  file?: string;
+  /**
+   * Add `workflow_dispatch`. Default `true` (with a `publish_all` input when `publish` is set); `false` removes the
+   * trigger and the input.
+   */
+  workflowDispatch?: boolean;
+  /** Condition of the release-please job (`if:`), e.g. `github.repository == 'org/repo'`. */
+  if?: string;
+  /**
+   * `separate-pull-requests`. Default: `false` for a monorepo, unset for a single root package. Set it to emit the
+   * key either way.
+   */
+  separatePullRequests?: boolean;
+  /** `plugins`. Default: `['node-workspace']` for a monorepo, none for a single root package. `[]` emits none. */
+  plugins?: string[];
   /** Package paths to release (`'.'` for a single-package repo). Default: the keys of `packagesConfig`, else `['.']`. */
   packages?: string[];
   /** Per-package config written under `packages` in `release-please-config.json`. Keys must be in `packages`. */
@@ -90,6 +108,8 @@ export class ReleasePlease extends Construct {
     for (const k of Object.keys(props.packagesConfig ?? {}))
       if (!packages.includes(k)) throw new Error(`ReleasePlease: packagesConfig key "${k}" is not in packages`);
     const monorepo = packages.length > 1 || packages[0] !== '.';
+    const plugins = props.plugins ?? (monorepo ? ['node-workspace'] : []);
+    const publishAll = !!props.publish && props.workflowDispatch !== false;
 
     new ManagedFile(this, 'config', {
       path: 'release-please-config.json',
@@ -97,12 +117,14 @@ export class ReleasePlease extends Construct {
       content: {
         $schema: 'https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json',
         'release-type': props.releaseType ?? 'node',
-        ...(monorepo
-          ? { 'include-component-in-tag': true, 'separate-pull-requests': false, plugins: ['node-workspace'] }
-          : props.includeComponentInTag === undefined
-            ? {}
-            : { 'include-component-in-tag': props.includeComponentInTag }),
-        ...(monorepo && props.includeComponentInTag !== undefined
+        ...(monorepo ? { 'include-component-in-tag': true } : {}),
+        ...(props.separatePullRequests !== undefined
+          ? { 'separate-pull-requests': props.separatePullRequests }
+          : monorepo
+            ? { 'separate-pull-requests': false }
+            : {}),
+        ...(plugins.length ? { plugins } : {}),
+        ...(props.includeComponentInTag !== undefined
           ? { 'include-component-in-tag': props.includeComponentInTag }
           : {}),
         ...props.config,
@@ -115,22 +137,26 @@ export class ReleasePlease extends Construct {
       content: Object.fromEntries(packages.map((p) => [p, props.initialVersion ?? '0.1.0'])),
     });
 
-    this.workflow = new Workflow(this, 'release-please', {
-      name: 'Release',
+    this.workflow = new Workflow(this, props.file ?? 'release-please', {
+      name: props.name ?? 'Release',
       on: {
         push: { branches: [props.branch ?? 'main'] },
-        workflowDispatch: props.publish
-          ? {
-              inputs: {
-                [PUBLISH_ALL]: {
-                  description:
-                    'Publish every configured package that is not yet on npm (recovery after a failed publish)',
-                  type: 'boolean',
-                  default: false,
-                },
-              },
-            }
-          : {},
+        ...(props.workflowDispatch === false
+          ? {}
+          : {
+              workflowDispatch: publishAll
+                ? {
+                    inputs: {
+                      [PUBLISH_ALL]: {
+                        description:
+                          'Publish every configured package that is not yet on npm (recovery after a failed publish)',
+                        type: 'boolean',
+                        default: false,
+                      },
+                    },
+                  }
+                : {},
+            }),
       },
       // A dedicated token does the writing; with a `github.token` fallback the workflow token must be able to as well.
       permissions:
@@ -141,6 +167,7 @@ export class ReleasePlease extends Construct {
     });
     const job = (this.job = this.workflow.addJob('release-please', {
       runsOn: 'ubuntu-latest',
+      if: props.if,
       timeoutMinutes: 10,
       outputs: {
         releases_created: '${{ steps.release.outputs.releases_created }}',
@@ -170,16 +197,16 @@ export class ReleasePlease extends Construct {
       uses: 'googleapis/release-please-action@v5',
       with: token ? { token } : undefined,
     });
-    if (props.publish) this.publishJob = this.addPublishJob(props.publish, packages);
+    if (props.publish) this.publishJob = this.addPublishJob(props.publish, packages, publishAll);
   }
 
-  private addPublishJob(p: ReleasePleasePublish, packages: string[]): Job {
+  private addPublishJob(p: ReleasePleasePublish, packages: string[], publishAll: boolean): Job {
     const pm = p.packageManager ?? 'pnpm';
     const job = this.workflow.addJob('publish', {
       runsOn: 'ubuntu-latest',
       needs: this.job,
       // Also runs on a manual dispatch with `publish_all`, to finish a release whose publish partly failed.
-      if: `${this.releasesCreated} || inputs.${PUBLISH_ALL}`,
+      if: publishAll ? `${this.releasesCreated} || inputs.${PUBLISH_ALL}` : this.releasesCreated,
       timeoutMinutes: 15,
       permissions: { contents: 'read', idToken: 'write' },
     });
@@ -194,7 +221,9 @@ export class ReleasePlease extends Construct {
     job.addStep({ name: 'Install', run: pm === 'pnpm' ? 'pnpm install --frozen-lockfile' : 'npm ci' });
     if (p.build !== false) job.addStep({ name: 'Build', run: p.build ?? `${pm} run build` });
     const env: Record<string, string> = {
-      PATHS_RELEASED: `\${{ inputs.${PUBLISH_ALL} && '${JSON.stringify(packages)}' || needs.release-please.outputs.paths_released }}`,
+      PATHS_RELEASED: publishAll
+        ? `\${{ inputs.${PUBLISH_ALL} && '${JSON.stringify(packages)}' || needs.release-please.outputs.paths_released }}`
+        : '${{ needs.release-please.outputs.paths_released }}',
     };
     if (p.npmTokenSecret)
       env.NODE_AUTH_TOKEN = secret(this, p.npmTokenSecret, {
