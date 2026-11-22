@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.1](https://github.com/cikick/cikick/compare/policies-v0.7.0...policies-v0.7.1) (2026-11-22)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @cikick/core bumped to 0.7.0
+
 ## [0.7.0](https://github.com/cikick/cikick/compare/policies-v0.6.0...policies-v0.7.0) (2026-11-22)
 
 

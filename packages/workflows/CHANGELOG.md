@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0](https://github.com/cikick/cikick/compare/workflows-v0.8.0...workflows-v0.9.0) (2026-11-22)
+
+
+### Features
+
+* **core:** add sh tagged template, expression helpers and script() for run scripts ([#10](https://github.com/cikick/cikick/issues/10)) ([80e14bc](https://github.com/cikick/cikick/commit/80e14bc4f84f1cb7111f77153793cc90666c9002))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @cikick/core bumped to 0.7.0
+  * devDependencies
+    * @cikick/policies bumped to 0.7.1
+
 ## [0.8.0](https://github.com/cikick/cikick/compare/workflows-v0.7.0...workflows-v0.8.0) (2026-11-22)
 
 

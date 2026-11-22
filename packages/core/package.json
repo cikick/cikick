@@ -1,6 +1,6 @@
 {
   "name": "@cikick/core",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "CDK-style constructs, synth, lockfile, aspects, checks for GitHub Actions workflows",
   "homepage": "https://github.com/cikick/cikick",
   "repository": {
