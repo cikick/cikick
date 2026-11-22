@@ -2,14 +2,25 @@
   "name": "@cikick/policies",
   "version": "0.1.0",
   "description": "Stock aspects and checks for cikick: pinned actions, explicit permissions, timeouts, deprecations",
+  "files": [
+    "dist"
+  ],
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
     "./package.json": "./package.json"
   },
-  "files": ["dist"],
-  "scripts": { "build": "tsc -p tsconfig.json", "test": "vitest run" },
-  "dependencies": { "@cikick/core": "workspace:*", "constructs": "^10.8.1" }
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cikick/core": "workspace:*",
+    "constructs": "^10.8.1"
+  }
 }

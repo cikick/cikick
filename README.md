@@ -7,16 +7,16 @@ CDK-style workflow manager for GitHub Actions, distributed as npm packages.
 - **Pin** every action to a commit SHA in `cikick.lock.json` (`git ls-remote`, no token needed)
 - **Guard** with checks/aspects (`@cikick/policies`): pinned actions, explicit permissions, script injection, deprecations with `enforceAfter`
 - **Migrate**: packages ship versioned codemods; `npx cikick update` runs them when Renovate bumps a version
-- **Fleet**: `cikick-fleet` over repos *you select* — inventory, settings drift, secret age policy, multi-repo secret rotation
+- **Fleet**: `cikick-fleet` over repos _you select_ — inventory, settings drift, secret age policy, multi-repo secret rotation
 
-| Package | |
-|---|---|
-| [`@cikick/core`](packages/core) | constructs, synth, lockfile, aspects, checks, managed files, secrets, migrations API |
-| [`@cikick/cli`](packages/cli) | `cikick synth \| check \| lock \| update \| migrate \| secrets \| init` |
-| [`@cikick/policies`](packages/policies) | stock aspects/checks, `applyBaseline(app)` |
-| [`@cikick/fleet`](packages/fleet) | `cikick-fleet select \| inventory \| settings \| secrets \| report` |
-| [`examples/wf-node-ci`](examples/wf-node-ci) | example shared workflow package with a migration |
-| [`examples/consumer`](examples/consumer) | example repo consuming it, with generated output committed |
+| Package                                      |                                                                                      |
+| -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [`@cikick/core`](packages/core)              | constructs, synth, lockfile, aspects, checks, managed files, secrets, migrations API |
+| [`@cikick/cli`](packages/cli)                | `cikick synth \| check \| lock \| update \| migrate \| secrets \| init`              |
+| [`@cikick/policies`](packages/policies)      | stock aspects/checks, `applyBaseline(app)`                                           |
+| [`@cikick/fleet`](packages/fleet)            | `cikick-fleet select \| inventory \| settings \| secrets \| report`                  |
+| [`examples/wf-node-ci`](examples/wf-node-ci) | example shared workflow package with a migration                                     |
+| [`examples/consumer`](examples/consumer)     | example repo consuming it, with generated output committed                           |
 
 ```ts
 // cikick.config.ts
@@ -36,6 +36,9 @@ In CI: `npx cikick check` fails on drift or policy errors. In Renovate: `postUpg
 Design: [docs/PLAN.md](docs/PLAN.md).
 
 ## Develop
+
 ```bash
 pnpm install && pnpm build && pnpm test
+pnpm typecheck && pnpm lint && pnpm format:check
+pnpm lint && pnpm format:check
 ```

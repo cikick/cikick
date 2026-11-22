@@ -1,4 +1,5 @@
-import { Construct, IConstruct } from 'constructs';
+import type { IConstruct } from 'constructs';
+import { Construct } from 'constructs';
 
 export type SecretScope = 'repo' | 'env' | 'org';
 

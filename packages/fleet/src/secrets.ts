@@ -49,7 +49,8 @@ export async function listRepoSecrets(client: GitHubClient, full: string): Promi
       repo,
       environment_name: env.name,
     });
-    for (const s of secrets) found.push({ name: s.name, scope: 'env', environment: env.name, updated_at: s.updated_at });
+    for (const s of secrets)
+      found.push({ name: s.name, scope: 'env', environment: env.name, updated_at: s.updated_at });
   }
   return found;
 }
@@ -86,8 +87,16 @@ export async function secretsReport(
     const matched = new Set<FoundSecret>();
     for (const p of policies) {
       if (!policyTargets(config, p, [repo]).length) continue;
-      const hit = found.find((s) => s.name === p.name && s.scope === p.scope && (p.scope === 'repo' || s.environment === p.environment));
-      const base = { repo, name: p.name, scope: p.scope, environment: p.environment, maxAgeDays: p.maxAgeDays } as const;
+      const hit = found.find(
+        (s) => s.name === p.name && s.scope === p.scope && (p.scope === 'repo' || s.environment === p.environment),
+      );
+      const base = {
+        repo,
+        name: p.name,
+        scope: p.scope,
+        environment: p.environment,
+        maxAgeDays: p.maxAgeDays,
+      } as const;
       if (!hit) {
         rows.push({ ...base, status: 'missing' });
         continue;
@@ -115,7 +124,8 @@ export async function secretsReport(
 }
 
 /** Rows needing attention (stale/missing/untracked-stale). */
-export const needsAttention = (r: SecretRow) => r.status === 'stale' || r.status === 'missing' || r.status === 'untracked-stale';
+export const needsAttention = (r: SecretRow) =>
+  r.status === 'stale' || r.status === 'missing' || r.status === 'untracked-stale';
 
 export async function sealSecret(publicKeyB64: string, value: string): Promise<string> {
   await sodium.ready;
@@ -141,7 +151,11 @@ export interface RotateResult {
 }
 
 /** Rotate a secret across the given (already resolved) targets. The value is never included in results. */
-export async function rotateSecret(client: GitHubClient, targets: string[], opts: RotateOptions): Promise<RotateResult[]> {
+export async function rotateSecret(
+  client: GitHubClient,
+  targets: string[],
+  opts: RotateOptions,
+): Promise<RotateResult[]> {
   const scope: 'repo' | 'env' = opts.environment ? 'env' : 'repo';
   const results: RotateResult[] = [];
   for (const full of targets) {
@@ -160,7 +174,8 @@ export async function rotateSecret(client: GitHubClient, targets: string[], opts
     const params = { owner, repo, environment_name: opts.environment, secret_name: opts.name };
     try {
       const key = await getOrUndefined(client, pk, params);
-      if (!key) throw new Error(opts.environment ? `environment "${opts.environment}" not found` : 'public key not found');
+      if (!key)
+        throw new Error(opts.environment ? `environment "${opts.environment}" not found` : 'public key not found');
       const encrypted_value = await sealSecret(key.key, opts.value);
       const res = await client.request(put, { ...params, encrypted_value, key_id: key.key_id });
       results.push({ ...base, status: res.status === 201 ? 'created' : 'updated' });

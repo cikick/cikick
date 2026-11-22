@@ -1,4 +1,4 @@
-import { ActionRef, Job, Step, Workflow, isSha, type Check, type CheckContext, type Finding, type Severity } from '@cikick/core';
+import { ActionRef, Workflow, isSha, type Check, type CheckContext, type Finding, type Severity } from '@cikick/core';
 
 const wfPath = (wf: Workflow) => wf.filePath;
 const workflows = (ctx: CheckContext) => ctx.app.node.findAll().filter(Workflow.isWorkflow);
@@ -13,7 +13,8 @@ export const requirePinnedActions: Check = {
       const items: { where: string; uses: unknown }[] = [];
       for (const job of wf.jobs) {
         if (job.props.uses !== undefined) items.push({ where: `${job.node.id}`, uses: job.props.uses });
-        for (const s of job.steps) if (s.props.uses !== undefined) items.push({ where: `${job.node.id}`, uses: s.props.uses });
+        for (const s of job.steps)
+          if (s.props.uses !== undefined) items.push({ where: `${job.node.id}`, uses: s.props.uses });
       }
       for (const { where, uses } of items) {
         let msg: string | undefined;
@@ -24,7 +25,13 @@ export const requirePinnedActions: Check = {
         } else if (typeof uses === 'string' && !uses.startsWith('./') && !uses.startsWith('docker://')) {
           msg = `${uses} is not a valid pinned action reference`;
         }
-        if (msg) out.push({ checkId: 'require-pinned-actions', severity: 'error', message: `job "${where}": ${msg}`, path: wfPath(wf) });
+        if (msg)
+          out.push({
+            checkId: 'require-pinned-actions',
+            severity: 'error',
+            message: `job "${where}": ${msg}`,
+            path: wfPath(wf),
+          });
       }
     }
     return out;
@@ -74,7 +81,10 @@ export const noPullRequestTargetCheckout: Check = {
           const ref = s.actionRef;
           if (!ref || ref.owner !== 'actions' || ref.repo !== 'checkout') continue;
           const w = s.props.with ?? {};
-          const r = [w.ref, w.repository].filter((v) => v !== undefined).map(String).join(' ');
+          const r = [w.ref, w.repository]
+            .filter((v) => v !== undefined)
+            .map(String)
+            .join(' ');
           if (/head|github\.event\.pull_request|github\.head_ref|refs\/pull\//i.test(r)) {
             out.push({
               checkId: 'no-pull-request-target-checkout',
@@ -131,7 +141,12 @@ export const requireTimeout: Check = {
     for (const wf of workflows(ctx)) {
       for (const job of wf.jobs) {
         if (job.props.uses === undefined && job.props.timeoutMinutes === undefined) {
-          out.push({ checkId: 'require-timeout', severity: 'warn', message: `job "${job.node.id}" has no timeout-minutes`, path: wfPath(wf) });
+          out.push({
+            checkId: 'require-timeout',
+            severity: 'warn',
+            message: `job "${job.node.id}" has no timeout-minutes`,
+            path: wfPath(wf),
+          });
         }
       }
     }
@@ -150,7 +165,7 @@ export interface DeprecatedActionProps {
 }
 
 const major = (ref: string): number | undefined => {
-  const m = /^v?(\d+)(?:[.\-]|$)/.exec(ref);
+  const m = /^v?(\d+)(?:[.-]|$)/.exec(ref);
   return m ? Number(m[1]) : undefined;
 };
 
@@ -213,7 +228,12 @@ export function fileContains(props: FileContainsProps): Check {
         return props.required ? [{ checkId: id, severity, message: props.message, path: props.path }] : [];
       }
       const p = props.pattern;
-      const ok = typeof p === 'function' ? p(content) : typeof p === 'string' ? content.includes(p) : new RegExp(p.source, p.flags.replace('g', '')).test(content);
+      const ok =
+        typeof p === 'function'
+          ? p(content)
+          : typeof p === 'string'
+            ? content.includes(p)
+            : new RegExp(p.source, p.flags.replace('g', '')).test(content);
       return ok ? [] : [{ checkId: id, severity, message: props.message, path: props.path }];
     },
   };

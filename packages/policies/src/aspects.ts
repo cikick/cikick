@@ -92,7 +92,12 @@ export class ReplaceAction implements IAspect {
     if (!Step.isStep(node) && !Job.isJob(node)) return;
     const u = node.props.uses;
     if (u instanceof ActionRef && u.toSpec() === this.from.toSpec()) {
-      node.props.uses = new ActionRef({ owner: this.to.owner, repo: this.to.repo, path: this.to.path, ref: this.to.ref });
+      node.props.uses = new ActionRef({
+        owner: this.to.owner,
+        repo: this.to.repo,
+        path: this.to.path,
+        ref: this.to.ref,
+      });
     }
   }
 }

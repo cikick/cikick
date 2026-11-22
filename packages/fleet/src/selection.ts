@@ -3,7 +3,9 @@ import type { FleetConfig, RepoRef } from './types.js';
 /** Thrown when a command is asked to touch a repository outside the user's selection. */
 export class NotSelectedError extends Error {
   constructor(public readonly repos: string[]) {
-    super(`Refusing to operate on repositories not in the fleet selection: ${repos.join(', ')}. Add them with "cikick-fleet select --add".`);
+    super(
+      `Refusing to operate on repositories not in the fleet selection: ${repos.join(', ')}. Add them with "cikick-fleet select --add".`,
+    );
     this.name = 'NotSelectedError';
   }
 }

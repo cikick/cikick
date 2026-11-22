@@ -48,7 +48,11 @@ export async function computeSynth(opts: RunOptions = {}): Promise<SynthRun> {
     for (const p of packages) for (const c of p.exports.checks ?? []) Checks.of(a).add(c);
   });
   const lock: Lockfile = readLockfile(repoDir) ?? emptyLockfile();
-  const resolver = opts.resolver ?? (opts.frozen ? undefined : new FallbackResolver(new GitResolver(), new GitHubResolver({ token: process.env.GITHUB_TOKEN || undefined })));
+  const resolver =
+    opts.resolver ??
+    (opts.frozen
+      ? undefined
+      : new FallbackResolver(new GitResolver(), new GitHubResolver({ token: process.env.GITHUB_TOKEN || undefined })));
   const result = await synth(app, {
     repoDir,
     resolver,

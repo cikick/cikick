@@ -1,6 +1,12 @@
 import { Aspects, Checks, type App, type Check, type IAspect } from '@cikick/core';
 import { DefaultTimeout, ExplicitPermissions } from './aspects.js';
-import { noPullRequestTargetCheckout, noScriptInjection, requireExplicitPermissions, requirePinnedActions, requireTimeout } from './checks.js';
+import {
+  noPullRequestTargetCheckout,
+  noScriptInjection,
+  requireExplicitPermissions,
+  requirePinnedActions,
+  requireTimeout,
+} from './checks.js';
 
 export interface BaselineOptions {
   /** Default timeout applied to jobs lacking one. Default 30. */
@@ -17,8 +23,17 @@ export interface Baseline {
 /** Opinionated security baseline: least-privilege permissions + timeouts, plus the stock checks. */
 export function securityBaseline(opts: BaselineOptions = {}): Baseline {
   return {
-    aspects: [new ExplicitPermissions(opts.permissions ?? { default: { contents: 'read' } }), new DefaultTimeout(opts.timeoutMinutes ?? 30)],
-    checks: [requirePinnedActions, requireExplicitPermissions, noPullRequestTargetCheckout, noScriptInjection, requireTimeout],
+    aspects: [
+      new ExplicitPermissions(opts.permissions ?? { default: { contents: 'read' } }),
+      new DefaultTimeout(opts.timeoutMinutes ?? 30),
+    ],
+    checks: [
+      requirePinnedActions,
+      requireExplicitPermissions,
+      noPullRequestTargetCheckout,
+      noScriptInjection,
+      requireTimeout,
+    ],
   };
 }
 

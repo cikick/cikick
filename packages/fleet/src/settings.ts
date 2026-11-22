@@ -26,7 +26,11 @@ export interface RepoSettingsDiff {
   error?: string;
 }
 
-export async function readRepoSettings(client: GitHubClient, full: string, policy: SettingsPolicy): Promise<RepoSettingsState> {
+export async function readRepoSettings(
+  client: GitHubClient,
+  full: string,
+  policy: SettingsPolicy,
+): Promise<RepoSettingsState> {
   const { owner, repo } = parseRepo(full);
   const p = { owner, repo };
   const s: RepoSettingsState = {};
@@ -53,15 +57,23 @@ export async function readRepoSettings(client: GitHubClient, full: string, polic
       if (rs.enforcement === 'disabled' || (rs.target && rs.target !== 'branch')) continue;
       let detail = rs;
       if (!rs.conditions && rs.id !== undefined) {
-        detail = (await getOrUndefined(client, 'GET /repos/{owner}/{repo}/rulesets/{ruleset_id}', { ...p, ruleset_id: rs.id })) ?? rs;
+        detail =
+          (await getOrUndefined(client, 'GET /repos/{owner}/{repo}/rulesets/{ruleset_id}', {
+            ...p,
+            ruleset_id: rs.id,
+          })) ?? rs;
       }
       const inc: string[] = detail.conditions?.ref_name?.include ?? [];
-      if (inc.includes(`refs/heads/${branch}`) || inc.includes('~DEFAULT_BRANCH') || inc.includes('~ALL')) covering.push(...inc);
+      if (inc.includes(`refs/heads/${branch}`) || inc.includes('~DEFAULT_BRANCH') || inc.includes('~ALL'))
+        covering.push(...inc);
     }
     s.rulesetBranches = covering;
     s.rulesetPresent = covering.length > 0;
     try {
-      const prot = await getOrUndefined(client, 'GET /repos/{owner}/{repo}/branches/{branch}/protection', { ...p, branch });
+      const prot = await getOrUndefined(client, 'GET /repos/{owner}/{repo}/branches/{branch}/protection', {
+        ...p,
+        branch,
+      });
       s.branchProtected = prot !== undefined;
     } catch (e) {
       if (errorStatus(e) !== 403) throw e;
@@ -71,21 +83,32 @@ export async function readRepoSettings(client: GitHubClient, full: string, polic
   return s;
 }
 
-const sameSet = (a: string[] = [], b: string[] = []) => a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i]);
+const sameSet = (a: string[] = [], b: string[] = []) =>
+  a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i]);
 
 export function diffSettings(state: RepoSettingsState, policy: SettingsPolicy): SettingDiff[] {
   const out: SettingDiff[] = [];
   const cmp = (key: string, desired: unknown, actual: unknown, eq = desired === actual) =>
     out.push({ key, desired, actual, status: eq ? 'ok' : 'drift' });
-  if (policy.defaultWorkflowPermissions !== undefined) cmp('defaultWorkflowPermissions', policy.defaultWorkflowPermissions, state.defaultWorkflowPermissions);
-  if (policy.canApprovePullRequestReviews !== undefined) cmp('canApprovePullRequestReviews', policy.canApprovePullRequestReviews, state.canApprovePullRequestReviews);
+  if (policy.defaultWorkflowPermissions !== undefined)
+    cmp('defaultWorkflowPermissions', policy.defaultWorkflowPermissions, state.defaultWorkflowPermissions);
+  if (policy.canApprovePullRequestReviews !== undefined)
+    cmp('canApprovePullRequestReviews', policy.canApprovePullRequestReviews, state.canApprovePullRequestReviews);
   if (policy.allowedActions !== undefined) cmp('allowedActions', policy.allowedActions, state.allowedActions);
   const sel = policy.selectedActions;
   if (sel) {
     const act = state.selectedActions;
-    if (sel.githubOwnedAllowed !== undefined) cmp('selectedActions.githubOwnedAllowed', sel.githubOwnedAllowed, act?.githubOwnedAllowed);
-    if (sel.verifiedAllowed !== undefined) cmp('selectedActions.verifiedAllowed', sel.verifiedAllowed, act?.verifiedAllowed);
-    if (sel.patternsAllowed !== undefined) cmp('selectedActions.patternsAllowed', sel.patternsAllowed, act?.patternsAllowed, sameSet(sel.patternsAllowed, act?.patternsAllowed));
+    if (sel.githubOwnedAllowed !== undefined)
+      cmp('selectedActions.githubOwnedAllowed', sel.githubOwnedAllowed, act?.githubOwnedAllowed);
+    if (sel.verifiedAllowed !== undefined)
+      cmp('selectedActions.verifiedAllowed', sel.verifiedAllowed, act?.verifiedAllowed);
+    if (sel.patternsAllowed !== undefined)
+      cmp(
+        'selectedActions.patternsAllowed',
+        sel.patternsAllowed,
+        act?.patternsAllowed,
+        sameSet(sel.patternsAllowed, act?.patternsAllowed),
+      );
   }
   if (policy.requireRuleset) {
     out.push({
@@ -98,7 +121,11 @@ export function diffSettings(state: RepoSettingsState, policy: SettingsPolicy): 
   return out;
 }
 
-export async function settingsDiff(client: GitHubClient, targets: string[], policy: SettingsPolicy | undefined): Promise<RepoSettingsDiff[]> {
+export async function settingsDiff(
+  client: GitHubClient,
+  targets: string[],
+  policy: SettingsPolicy | undefined,
+): Promise<RepoSettingsDiff[]> {
   if (!policy) throw new Error('No settingsPolicy defined in fleet config.');
   const res: RepoSettingsDiff[] = [];
   for (const repo of targets) {
@@ -141,7 +168,8 @@ export async function settingsApply(
     const { owner, repo } = parseRepo(d.repo);
     const p = { owner, repo };
     const drift = new Map(d.diffs.filter((x) => x.status === 'drift').map((x) => [x.key, x]));
-    for (const x of d.diffs) if (x.status === 'report') result.report.push({ repo: d.repo, key: x.key, actual: x.actual });
+    for (const x of d.diffs)
+      if (x.status === 'report') result.report.push({ repo: d.repo, key: x.key, actual: x.actual });
     const puts: { description: string; route: string; body: Record<string, unknown> }[] = [];
     if (drift.has('allowedActions')) {
       puts.push({
@@ -161,7 +189,11 @@ export async function settingsApply(
         body.can_approve_pull_request_reviews = policy!.canApprovePullRequestReviews;
         parts.push(`canApprovePullRequestReviews -> ${policy!.canApprovePullRequestReviews}`);
       }
-      puts.push({ description: parts.join(', '), route: 'PUT /repos/{owner}/{repo}/actions/permissions/workflow', body });
+      puts.push({
+        description: parts.join(', '),
+        route: 'PUT /repos/{owner}/{repo}/actions/permissions/workflow',
+        body,
+      });
     }
     const selKeys = [...drift.keys()].filter((k) => k.startsWith('selectedActions.'));
     if (selKeys.length) {
@@ -170,7 +202,11 @@ export async function settingsApply(
       if (s.githubOwnedAllowed !== undefined) body.github_owned_allowed = s.githubOwnedAllowed;
       if (s.verifiedAllowed !== undefined) body.verified_allowed = s.verifiedAllowed;
       if (s.patternsAllowed !== undefined) body.patterns_allowed = s.patternsAllowed;
-      puts.push({ description: `selected actions: ${selKeys.map((k) => k.split('.')[1]).join(', ')}`, route: 'PUT /repos/{owner}/{repo}/actions/permissions/selected-actions', body });
+      puts.push({
+        description: `selected actions: ${selKeys.map((k) => k.split('.')[1]).join(', ')}`,
+        route: 'PUT /repos/{owner}/{repo}/actions/permissions/selected-actions',
+        body,
+      });
     }
     for (const put of puts) {
       const action: ApplyAction = { repo: d.repo, description: put.description, applied: false };

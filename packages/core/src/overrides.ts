@@ -1,6 +1,4 @@
-export type OverrideOp =
-  | { op: 'set'; path: string; value: unknown }
-  | { op: 'delete'; path: string };
+export type OverrideOp = { op: 'set'; path: string; value: unknown } | { op: 'delete'; path: string };
 
 /** Split a dot path; `\.` escapes a literal dot. */
 export function parsePath(path: string): string[] {

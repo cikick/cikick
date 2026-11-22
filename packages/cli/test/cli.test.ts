@@ -27,7 +27,10 @@ export default (app: App) => {
   );
   const pkg = join(dir, 'node_modules', 'fake-wf');
   mkdirSync(pkg, { recursive: true });
-  writeFileSync(join(pkg, 'package.json'), JSON.stringify({ name: 'fake-wf', version: opts.pkgVersion ?? '1.0.0', cikick: './cikick.mjs' }));
+  writeFileSync(
+    join(pkg, 'package.json'),
+    JSON.stringify({ name: 'fake-wf', version: opts.pkgVersion ?? '1.0.0', cikick: './cikick.mjs' }),
+  );
   writeFileSync(
     join(pkg, 'cikick.mjs'),
     `const mk = (version) => ({ version, description: 'rename ci to ci-' + version.replace(/\\./g, '_'), async run(ctx) {

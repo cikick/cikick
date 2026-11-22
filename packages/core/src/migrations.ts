@@ -27,7 +27,11 @@ export interface CikickPackageExports {
 }
 
 /** Migrations with `from < version <= to`, ordered ascending (stable for equal versions). */
-export function selectMigrations<M extends Pick<Migration, 'version'>>(migrations: readonly M[], from: string, to: string): M[] {
+export function selectMigrations<M extends Pick<Migration, 'version'>>(
+  migrations: readonly M[],
+  from: string,
+  to: string,
+): M[] {
   for (const v of [from, to]) if (!semver.valid(v)) throw new Error(`Invalid semver "${v}"`);
   return migrations
     .map((m, i) => ({ m, i }))

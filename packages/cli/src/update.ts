@@ -28,7 +28,12 @@ export interface UpdateOutcome {
 
 export function planFor(pkg: CikickPackage, from: string, to: string): PlannedMigration[] {
   if (semver.gte(from, to)) return [];
-  return selectMigrations(pkg.exports.migrations, from, to).map((migration) => ({ pkg: pkg.name, from, to, migration }));
+  return selectMigrations(pkg.exports.migrations, from, to).map((migration) => ({
+    pkg: pkg.name,
+    from,
+    to,
+    migration,
+  }));
 }
 
 function makeContext(repoDir: string, configPath: string, log: (m: string) => void): MigrationContext {
@@ -53,7 +58,11 @@ function makeContext(repoDir: string, configPath: string, log: (m: string) => vo
   };
 }
 
-export async function runMigrations(repoDir: string, planned: PlannedMigration[], log: (m: string) => void = () => {}): Promise<void> {
+export async function runMigrations(
+  repoDir: string,
+  planned: PlannedMigration[],
+  log: (m: string) => void = () => {},
+): Promise<void> {
   if (!planned.length) return;
   const ctx = makeContext(repoDir, findConfigFile(repoDir), log);
   for (const p of planned) {
@@ -79,7 +88,8 @@ export async function runUpdate(opts: UpdateOptions = {}): Promise<UpdateOutcome
       log(`${p.name}@${p.version}: first adoption, recording version (no migrations)`);
       continue;
     }
-    if (semver.gt(from, p.version)) log(`${p.name}: installed ${p.version} is older than locked ${from}; skipping migrations`);
+    if (semver.gt(from, p.version))
+      log(`${p.name}: installed ${p.version} is older than locked ${from}; skipping migrations`);
     else if (from !== p.version) log(`${p.name}: ${from} -> ${p.version}`);
     planned.push(...planFor(p, from, p.version));
   }
@@ -94,7 +104,9 @@ export async function runUpdate(opts: UpdateOptions = {}): Promise<UpdateOutcome
 }
 
 /** Run one package's migrations explicitly (`cikick migrate <pkg> --from <v> [--to <v>]`). */
-export async function runMigrate(opts: RunOptions & { pkg: string; from: string; to?: string }): Promise<PlannedMigration[]> {
+export async function runMigrate(
+  opts: RunOptions & { pkg: string; from: string; to?: string },
+): Promise<PlannedMigration[]> {
   const repoDir = resolve(opts.repoDir ?? process.cwd());
   const pkgs = await discoverPackages(repoDir);
   const p = pkgs.find((x) => x.name === opts.pkg);

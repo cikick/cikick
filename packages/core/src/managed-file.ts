@@ -63,10 +63,16 @@ export class ManagedFile extends Construct {
     const fmt = this.format;
     if (fmt === 'text') {
       if (this.mode === 'merged') throw new Error(`ManagedFile ${this.path}: merged mode requires json or yaml format`);
-      if (typeof this.content !== 'string') throw new Error(`ManagedFile ${this.path}: text format requires string content`);
+      if (typeof this.content !== 'string')
+        throw new Error(`ManagedFile ${this.path}: text format requires string content`);
       return this.content;
     }
-    let data: unknown = typeof this.content === 'string' ? (fmt === 'json' ? JSON.parse(this.content) : parseYaml(this.content)) : this.content;
+    let data: unknown =
+      typeof this.content === 'string'
+        ? fmt === 'json'
+          ? JSON.parse(this.content)
+          : parseYaml(this.content)
+        : this.content;
     if (this.mode === 'merged' && this.patchFile) {
       const p = join(repoDir, this.patchFile);
       if (existsSync(p)) {
@@ -75,7 +81,10 @@ export class ManagedFile extends Construct {
         try {
           patch = fmt === 'json' ? JSON.parse(raw) : parseYaml(raw);
         } catch (e) {
-          throw new Error(`ManagedFile ${this.path}: cannot parse patchFile ${this.patchFile}: ${(e as Error).message}`);
+          throw new Error(
+            `ManagedFile ${this.path}: cannot parse patchFile ${this.patchFile}: ${(e as Error).message}`,
+            { cause: e },
+          );
         }
         data = deepMerge(data, patch);
       }

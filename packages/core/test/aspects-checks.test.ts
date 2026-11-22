@@ -25,7 +25,12 @@ describe('aspects', () => {
 });
 
 describe('checks', () => {
-  const mk = (c: Partial<Check>): Check => ({ id: 'c1', severity: 'warn', run: () => [{ checkId: 'c1', severity: c.severity ?? 'warn', message: 'm' }], ...c });
+  const mk = (c: Partial<Check>): Check => ({
+    id: 'c1',
+    severity: 'warn',
+    run: () => [{ checkId: 'c1', severity: c.severity ?? 'warn', message: 'm' }],
+    ...c,
+  });
 
   it('reports severity as declared', async () => {
     const app = new App();
