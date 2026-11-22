@@ -1,6 +1,6 @@
 ---
 title: '@cikick/workflows'
-description: API reference for @cikick/workflows - reusable NodeCi, CloudflareDeploy, BrainLint, ReleasePlease and ConventionalCommits constructs.
+description: API reference for @cikick/workflows - reusable NodeCi, CloudflareDeploy, ReleasePlease and ConventionalCommits constructs.
 ---
 
 `@cikick/workflows` ships the constructs the cikick repository uses for its own CI and releases. Use them as they are, or customise them with props and [escape hatches](/cikick/docs/concepts/customisation/) (`.workflow`, `.job`, `addOverride`).
@@ -76,23 +76,6 @@ new CloudflareDeploy(app, 'deploy', {
 **Guard with `into`.** Deploy jobs added to an existing workflow (usually CI, which also runs on pull requests) get `if: github.ref == 'refs/heads/<branch>' && github.event_name == 'push'`, extended with `|| github.event_name == 'workflow_dispatch'` when `dispatch` is set. Override with `if`, or pass `if: false`. Own workflows are already limited by their triggers.
 
 **Push plus `workflow_run`.** To deploy on pushes (after a reusable CI gate) and also after another workflow finishes, add the trigger with `extraTriggers: { workflowRun: { workflows: ['Data refresh'], types: ['completed'], branches: ['main'] } }` and set `gate: { workflow: 'ci.yml', skipUnlessWorkflowRunSucceeded: true }`. The gate is skipped for `workflow_run` events, the deploy runs only if the triggering run succeeded (or the gate passed) and checks out `workflow_run.head_sha`. Not available with `into`.
-
-## `BrainLint`
-
-Installs a pinned [delivery brain](https://github.com/craftvalueorg/delivery-brain) CLI and runs `brain lint`. Standalone it is workflow `brain.yml` with one `lint` job; pass `job: ci.job` to append the steps to an existing job.
-
-| Prop            | Default                      | Notes                                                                                                                                                                                                                                                                                                                  |
-| --------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cliVersion`    | required unless `fromSource` | exact version, never `latest`                                                                                                                                                                                                                                                                                          |
-| `registry`      | `'npm'`                      | `'github'` installs `@craftvalueorg/delivery-brain` from GitHub Packages with `packages: read`                                                                                                                                                                                                                         |
-| `package`       | depends on `registry`        |                                                                                                                                                                                                                                                                                                                        |
-| `tokenSecret`   | `GITHUB_TOKEN`               | token for GitHub Packages, passed via `NODE_AUTH_TOKEN`                                                                                                                                                                                                                                                                |
-| `command`       | `'brain lint'`               |                                                                                                                                                                                                                                                                                                                        |
-| `fromSource`    | none                         | run this local command (e.g. `pnpm brain lint --quiet`) instead of installing the CLI; `cliVersion` becomes optional and `registry`, `package`, `tokenSecret` are rejected. Standalone, the job gets checkout, pnpm, Node and install (`packageManager?`, `registryAuth?`); with `job`, the job must already have them |
-| `extraCommands` | none                         | named steps after the lint                                                                                                                                                                                                                                                                                             |
-| `job`           | none                         | append to this job instead of creating a workflow                                                                                                                                                                                                                                                                      |
-
-`brainCliSteps(scope, options)` returns the same steps for use in your own job.
 
 ## `ReleasePlease`
 

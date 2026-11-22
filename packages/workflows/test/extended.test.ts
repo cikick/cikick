@@ -5,7 +5,7 @@ import { App, emptyLockfile, secretsManifest, synth } from '@cikick/core';
 import { applyBaseline } from '@cikick/policies';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { BrainLint, CloudflareDeploy, NodeCi, ReleasePlease } from '../src/index.js';
+import { CloudflareDeploy, NodeCi, ReleasePlease } from '../src/index.js';
 
 const lock = () => {
   const l = emptyLockfile();
@@ -389,69 +389,6 @@ function ci_job() {
   const app = new App();
   return new NodeCi(app, 'other').job;
 }
-
-describe('BrainLint', () => {
-  it('standalone workflow from npm', async () => {
-    const { r, yaml } = await run((app) => new BrainLint(app, 'brain', { cliVersion: '0.14.0' }));
-    const wf = yaml('.github/workflows/brain.yml');
-    expect(wf.permissions).toEqual({ contents: 'read' });
-    const steps = wf.jobs.lint.steps;
-    expect(steps.map((s: any) => s.name ?? s.uses.split('@')[0])).toEqual([
-      'actions/checkout',
-      'actions/setup-node',
-      'Install brain CLI',
-      'brain lint',
-    ]);
-    expect(steps[2].run).toBe('npm install --global @craftvalue/delivery-brain@0.14.0');
-    expect(steps[2].env).toBeUndefined();
-    expect(errors(r)).toEqual([]);
-  });
-
-  it('GitHub Packages: packages: read, token via NODE_AUTH_TOKEN, scoped setup-node', async () => {
-    const { r, yaml } = await run(
-      (app) =>
-        new BrainLint(app, 'brain', {
-          cliVersion: '0.14.0',
-          registry: 'github',
-          command: 'brain lint --quiet',
-          extraCommands: { 'Build site': 'pnpm build:brain-site' },
-        }),
-    );
-    const wf = yaml('.github/workflows/brain.yml');
-    expect(wf.permissions).toEqual({ contents: 'read', packages: 'read' });
-    const steps = wf.jobs.lint.steps;
-    expect(steps[1].with).toEqual({
-      'node-version': 22,
-      'registry-url': 'https://npm.pkg.github.com',
-      scope: '@craftvalueorg',
-    });
-    expect(steps[2].run).toBe('npm install --global @craftvalueorg/delivery-brain@0.14.0');
-    expect(steps[2].env).toEqual({ NODE_AUTH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' });
-    expect(steps.slice(-2).map((s: any) => s.run)).toEqual(['brain lint --quiet', 'pnpm build:brain-site']);
-    expect(errors(r)).toEqual([]);
-  });
-
-  it('appends to an existing job and grants packages: read on the workflow', async () => {
-    const { yaml } = await run((app) => {
-      const ci = new NodeCi(app, 'ci', { cikickCheck: false });
-      new BrainLint(app, 'brain', { cliVersion: '1.2.3', registry: 'github', job: ci.job });
-    });
-    const wf = yaml(CI);
-    expect(wf.permissions).toEqual({ contents: 'read', packages: 'read' });
-    expect(
-      wf.jobs.check.steps
-        .map((s: any) => s.name)
-        .filter(Boolean)
-        .slice(-3),
-    ).toEqual(['Test', 'Install brain CLI', 'brain lint']);
-  });
-
-  it('requires a pinned, shell-safe version', () => {
-    const bad = (v: string) => () => new BrainLint(new App(), 'b', { cliVersion: v });
-    expect(bad('latest')).toThrow();
-    expect(bad('1.0.0; curl x')).toThrow(/cliVersion/);
-  });
-});
 
 describe('ReleasePlease extensions', () => {
   it('packagesConfig writes per-package config in kebab-case', async () => {

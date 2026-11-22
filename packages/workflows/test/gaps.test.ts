@@ -5,14 +5,7 @@ import { App, Workflow, emptyLockfile, secretsManifest, synth } from '@cikick/co
 import { applyBaseline } from '@cikick/policies';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import {
-  BrainLint,
-  CloudflareDeploy,
-  NodeCi,
-  ReleasePlease,
-  resolveRegistryAuth,
-  toolchainSteps,
-} from '../src/index.js';
+import { CloudflareDeploy, NodeCi, ReleasePlease, resolveRegistryAuth, toolchainSteps } from '../src/index.js';
 
 const lock = () => {
   const l = emptyLockfile();
@@ -339,45 +332,6 @@ describe('ReleasePlease additions', () => {
     expect(yaml('.github/workflows/release-please.yml').jobs['release-please'].if).toBe(
       "github.repository == 'acme/app'",
     );
-  });
-});
-
-describe('BrainLint fromSource', () => {
-  it('appends the local command to an existing job without installing the CLI', async () => {
-    const { yaml } = await run((app) => {
-      const ci = new NodeCi(app, 'ci');
-      new BrainLint(app, 'brain', {
-        job: ci.job,
-        fromSource: 'pnpm brain lint --quiet',
-        extraCommands: { Site: 'pnpm site' },
-      });
-    });
-    const steps = yaml(CI).jobs.check.steps;
-    expect(steps.some((s: any) => s.name === 'Install brain CLI')).toBe(false);
-    expect(steps.at(-2)).toEqual({ name: 'brain lint', run: 'pnpm brain lint --quiet' });
-    expect(steps.at(-1)).toEqual({ name: 'Site', run: 'pnpm site' });
-    expect(yaml(CI).permissions).toEqual({ contents: 'read' });
-  });
-
-  it('standalone sets up the toolchain, then runs the command', async () => {
-    const { r, yaml } = await run((app) => new BrainLint(app, 'brain', { fromSource: 'pnpm brain lint' }));
-    const steps = yaml('.github/workflows/brain.yml').jobs.lint.steps;
-    expect(steps.map((s: any) => s.name ?? s.uses.split('@')[0])).toEqual([
-      'actions/checkout',
-      'pnpm/action-setup',
-      'actions/setup-node',
-      'Install',
-      'brain lint',
-    ]);
-    expect(steps.at(-1).run).toBe('pnpm brain lint');
-    expect(errors(r)).toEqual([]);
-  });
-
-  it('rejects mixing with the install options and requires cliVersion otherwise', () => {
-    const app = new App();
-    expect(() => new BrainLint(app, 'a', { fromSource: 'x', cliVersion: '1.0.0' })).toThrow(/fromSource/);
-    expect(() => new BrainLint(app, 'b', { fromSource: 'x', registry: 'github' })).toThrow(/fromSource/);
-    expect(() => new BrainLint(app, 'c', {})).toThrow(/cliVersion/);
   });
 });
 
