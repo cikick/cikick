@@ -173,7 +173,7 @@ export default (app: App) => {
 `applyBaseline(app)` registers:
 
 - aspects: `ExplicitPermissions` (sets workflow-level `permissions: { contents: read }` where none is declared) and `DefaultTimeout` (sets `timeout-minutes: 30` on jobs that have none);
-- checks: `require-pinned-actions`, `require-explicit-permissions`, `no-pull-request-target-checkout`, `no-script-injection` (warn) and `require-timeout` (warn).
+- checks: `require-pinned-actions`, `require-explicit-permissions`, `no-pull-request-target-checkout`, `no-script-injection` (warn), `no-cancel-in-progress-deploy` (warn) and `require-timeout` (warn).
 
 Both accept options: `applyBaseline(app, { timeoutMinutes: 20, permissions: { default: { contents: 'read', pullRequests: 'write' } } })`. Run `npx cikick synth` again and commit. See [Checks](/cikick/docs/concepts/checks/) and the [policies reference](/cikick/docs/reference/policies/).
 

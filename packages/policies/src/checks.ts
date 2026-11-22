@@ -1,4 +1,14 @@
-import { ActionRef, Workflow, isSha, type Check, type CheckContext, type Finding, type Severity } from '@cikick/core';
+import {
+  ActionRef,
+  Workflow,
+  isSha,
+  type Check,
+  type CheckContext,
+  type Concurrency,
+  type Finding,
+  type Job,
+  type Severity,
+} from '@cikick/core';
 
 const wfPath = (wf: Workflow) => wf.filePath;
 const workflows = (ctx: CheckContext) => ctx.app.node.findAll().filter(Workflow.isWorkflow);
@@ -100,10 +110,19 @@ export const noPullRequestTargetCheckout: Check = {
   },
 };
 
-const INJECTABLE =
-  /github\.(head_ref|event\.(issue\.(title|body)|pull_request\.(title|body|head\.(ref|label|repo\.default_branch))|comment\.body|review\.body|review_comment\.body|discussion\.(title|body)|pages\.[^}\s]*page_name|commits\[?[^}\s]*message|head_commit\.(message|author\.(name|email))|[^}\s]*\.(title|body|head_ref|label|message)))/;
+const INJECTABLE = new RegExp(
+  [
+    // Contexts an outside contributor controls: branch names, issue/PR/comment text, commit metadata.
+    'github\\.(head_ref|base_ref|event\\.(inputs\\.[\\w-]+|issue\\.(title|body)|pull_request\\.(title|body|head\\.(ref|label|repo\\.default_branch))|comment\\.body|review\\.body|review_comment\\.body|discussion\\.(title|body)|pages\\.[^}\\s]*page_name|commits\\[?[^}\\s]*message|head_commit\\.(message|author\\.(name|email))|[^}\\s]*\\.(title|body|head_ref|label|message)))',
+    // Free-form workflow_dispatch / workflow_call inputs.
+    '(?<![\\w.])inputs\\.[\\w-]+',
+  ].join('|'),
+);
 
-/** Warn on attacker-controlled expressions interpolated directly into `run:` scripts. */
+/**
+ * Warn on attacker-controlled expressions interpolated directly into `run:` scripts: PR/issue text, branch names
+ * (`github.head_ref`, `github.base_ref`) and workflow inputs (`inputs.*`, `github.event.inputs.*`).
+ */
 export const noScriptInjection: Check = {
   id: 'no-script-injection',
   severity: 'warn',
@@ -238,3 +257,57 @@ export function fileContains(props: FileContainsProps): Check {
     },
   };
 }
+
+const DEPLOY_COMMAND = /\bwrangler\b[^\n]*\b(deploy|publish|d1\s+migrations\s+apply)\b/;
+const PR_ONLY_CANCEL = /^\$\{\{\s*github\.event_name\s*==\s*'pull_request'\s*\}\}$/;
+
+/** Heuristic: a job that targets an environment, runs wrangler deploy/migrations or uses cloudflare/wrangler-action. */
+function isDeployJob(job: Job): boolean {
+  if (job.props.environment !== undefined) return true;
+  return job.steps.some((s) => {
+    const ref = s.actionRef;
+    if (ref && ref.owner === 'cloudflare' && ref.repo === 'wrangler-action') return true;
+    return s.props.run !== undefined && DEPLOY_COMMAND.test(s.props.run);
+  });
+}
+
+/** `cancel-in-progress` is risky unless it is off or limited to pull requests (`github.event_name == 'pull_request'`). */
+function cancelsInProgress(c: string | Concurrency | undefined): boolean {
+  if (c === undefined || typeof c === 'string') return false;
+  const v = c.cancelInProgress;
+  if (v === undefined || v === false) return false;
+  if (typeof v === 'string') return !PR_ONLY_CANCEL.test(v.trim()) && v.trim() !== 'false';
+  return true;
+}
+
+/**
+ * Warn when a deploy job (environment, `wrangler deploy` / `pages deploy` / `d1 migrations apply`, or
+ * `cloudflare/wrangler-action`) can be cancelled mid-flight by `concurrency.cancel-in-progress`, at job or workflow
+ * level. Cancelling a deploy half way leaves migrations and code out of step. `false`, or an expression limited to
+ * `github.event_name == 'pull_request'`, is accepted.
+ */
+export const noCancelInProgressDeploy: Check = {
+  id: 'no-cancel-in-progress-deploy',
+  severity: 'warn',
+  run(ctx) {
+    const out: Finding[] = [];
+    for (const wf of workflows(ctx)) {
+      for (const job of wf.jobs) {
+        if (!isDeployJob(job)) continue;
+        const level = cancelsInProgress(job.props.concurrency)
+          ? 'job'
+          : cancelsInProgress(wf.props.concurrency)
+            ? 'workflow'
+            : undefined;
+        if (level)
+          out.push({
+            checkId: 'no-cancel-in-progress-deploy',
+            severity: 'warn',
+            message: `deploy job "${job.node.id}" can be cancelled mid-flight: ${level}-level concurrency sets cancel-in-progress; use \`cancel-in-progress: false\``,
+            path: wfPath(wf),
+          });
+      }
+    }
+    return out;
+  },
+};

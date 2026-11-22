@@ -1,6 +1,7 @@
 import { Aspects, Checks, type App, type Check, type IAspect } from '@cikick/core';
 import { DefaultTimeout, ExplicitPermissions } from './aspects.js';
 import {
+  noCancelInProgressDeploy,
   noPullRequestTargetCheckout,
   noScriptInjection,
   requireExplicitPermissions,
@@ -32,6 +33,7 @@ export function securityBaseline(opts: BaselineOptions = {}): Baseline {
       requireExplicitPermissions,
       noPullRequestTargetCheckout,
       noScriptInjection,
+      noCancelInProgressDeploy,
       requireTimeout,
     ],
   };

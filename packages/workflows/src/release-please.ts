@@ -3,6 +3,10 @@ import { Construct } from 'constructs';
 
 const PUBLISH_ALL = 'publish_all';
 
+/** `packageName` -> `package-name`; keys that are already kebab-case pass through. */
+const kebabKeys = (o: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(o).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`), v]));
+
 export interface ReleasePleaseAppToken {
   /** Repository/org variable holding the GitHub App ID. Default `RELEASE_APP_ID`. */
   appIdVariable?: string;
@@ -10,9 +14,49 @@ export interface ReleasePleaseAppToken {
   privateKeySecret?: string;
 }
 
+export interface ReleasePleaseToken {
+  /** Secret holding a token (e.g. a PAT) for release-please, so release PRs trigger CI. */
+  secret: string;
+  /** Fall back to the workflow's `github.token` when the secret is empty. Default false. */
+  fallbackToGithubToken?: boolean;
+}
+
+/** Per-package entry of `release-please-config.json`. camelCase keys are written kebab-case (`packageName` -> `package-name`). */
+export interface ReleasePleasePackageConfig {
+  packageName?: string;
+  changelogPath?: string;
+  releaseType?: string;
+  extraFiles?: unknown[];
+  [key: string]: unknown;
+}
+
 export interface ReleasePleaseProps {
-  /** Package paths to release (`'.'` for a single-package repo). Default `['.']`. */
+  /** Workflow name. Default `Release`. */
+  name?: string;
+  /** Workflow file id (`.github/workflows/<file>.yml`). Default `release-please`. The job id stays `release-please`. */
+  file?: string;
+  /**
+   * Add `workflow_dispatch`. Default `true` (with a `publish_all` input when `publish` is set); `false` removes the
+   * trigger and the input.
+   */
+  workflowDispatch?: boolean;
+  /** Condition of the release-please job (`if:`), e.g. `github.repository == 'org/repo'`. */
+  if?: string;
+  /**
+   * `separate-pull-requests`. Default: `false` for a monorepo, unset for a single root package. Set it to emit the
+   * key either way.
+   */
+  separatePullRequests?: boolean;
+  /** `plugins`. Default: `['node-workspace']` for a monorepo, none for a single root package. `[]` emits none. */
+  plugins?: string[];
+  /** Package paths to release (`'.'` for a single-package repo). Default: the keys of `packagesConfig`, else `['.']`. */
   packages?: string[];
+  /** Per-package config written under `packages` in `release-please-config.json`. Keys must be in `packages`. */
+  packagesConfig?: Record<string, ReleasePleasePackageConfig>;
+  /** Override `include-component-in-tag`. Default: `true` for monorepos, unset for a single root package. */
+  includeComponentInTag?: boolean;
+  /** Run with this token instead of `GITHUB_TOKEN`. Not combinable with `appToken`. */
+  token?: ReleasePleaseToken;
   /** Version written to `.release-please-manifest.json` when it is first created. Default `0.1.0`. */
   initialVersion?: string;
   /** release-please release type. Default `node`. */
@@ -59,8 +103,13 @@ export class ReleasePlease extends Construct {
 
   constructor(scope: Construct, id: string, props: ReleasePleaseProps = {}) {
     super(scope, id);
-    const packages = props.packages ?? ['.'];
+    if (props.token && props.appToken) throw new Error('ReleasePlease: `token` and `appToken` are mutually exclusive');
+    const packages = props.packages ?? (props.packagesConfig ? Object.keys(props.packagesConfig) : ['.']);
+    for (const k of Object.keys(props.packagesConfig ?? {}))
+      if (!packages.includes(k)) throw new Error(`ReleasePlease: packagesConfig key "${k}" is not in packages`);
     const monorepo = packages.length > 1 || packages[0] !== '.';
+    const plugins = props.plugins ?? (monorepo ? ['node-workspace'] : []);
+    const publishAll = !!props.publish && props.workflowDispatch !== false;
 
     new ManagedFile(this, 'config', {
       path: 'release-please-config.json',
@@ -68,11 +117,18 @@ export class ReleasePlease extends Construct {
       content: {
         $schema: 'https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json',
         'release-type': props.releaseType ?? 'node',
-        ...(monorepo
-          ? { 'include-component-in-tag': true, 'separate-pull-requests': false, plugins: ['node-workspace'] }
+        ...(monorepo ? { 'include-component-in-tag': true } : {}),
+        ...(props.separatePullRequests !== undefined
+          ? { 'separate-pull-requests': props.separatePullRequests }
+          : monorepo
+            ? { 'separate-pull-requests': false }
+            : {}),
+        ...(plugins.length ? { plugins } : {}),
+        ...(props.includeComponentInTag !== undefined
+          ? { 'include-component-in-tag': props.includeComponentInTag }
           : {}),
         ...props.config,
-        packages: Object.fromEntries(packages.map((p) => [p, {}])),
+        packages: Object.fromEntries(packages.map((p) => [p, kebabKeys(props.packagesConfig?.[p] ?? {})])),
       },
     });
     new ManagedFile(this, 'manifest', {
@@ -81,28 +137,37 @@ export class ReleasePlease extends Construct {
       content: Object.fromEntries(packages.map((p) => [p, props.initialVersion ?? '0.1.0'])),
     });
 
-    this.workflow = new Workflow(this, 'release-please', {
-      name: 'Release',
+    this.workflow = new Workflow(this, props.file ?? 'release-please', {
+      name: props.name ?? 'Release',
       on: {
         push: { branches: [props.branch ?? 'main'] },
-        workflowDispatch: props.publish
-          ? {
-              inputs: {
-                [PUBLISH_ALL]: {
-                  description:
-                    'Publish every configured package that is not yet on npm (recovery after a failed publish)',
-                  type: 'boolean',
-                  default: false,
-                },
-              },
-            }
-          : {},
+        ...(props.workflowDispatch === false
+          ? {}
+          : {
+              workflowDispatch: publishAll
+                ? {
+                    inputs: {
+                      [PUBLISH_ALL]: {
+                        description:
+                          'Publish every configured package that is not yet on npm (recovery after a failed publish)',
+                        type: 'boolean',
+                        default: false,
+                      },
+                    },
+                  }
+                : {},
+            }),
       },
-      permissions: props.appToken ? { contents: 'read' } : { contents: 'write', pullRequests: 'write' },
+      // A dedicated token does the writing; with a `github.token` fallback the workflow token must be able to as well.
+      permissions:
+        props.appToken || (props.token && !props.token.fallbackToGithubToken)
+          ? { contents: 'read' }
+          : { contents: 'write', pullRequests: 'write' },
       concurrency: { group: 'release-please', cancelInProgress: false },
     });
     const job = (this.job = this.workflow.addJob('release-please', {
       runsOn: 'ubuntu-latest',
+      if: props.if,
       timeoutMinutes: 10,
       outputs: {
         releases_created: '${{ steps.release.outputs.releases_created }}',
@@ -123,21 +188,25 @@ export class ReleasePlease extends Construct {
       });
       token = '${{ steps.app-token.outputs.token }}';
     }
+    if (props.token) {
+      const ref = secret(this, props.token.secret, { description: 'Token used by release-please' });
+      token = props.token.fallbackToGithubToken ? ref.replace(' }}', ' || github.token }}') : ref;
+    }
     job.addStep({
       id: 'release',
       uses: 'googleapis/release-please-action@v5',
       with: token ? { token } : undefined,
     });
-    if (props.publish) this.publishJob = this.addPublishJob(props.publish, packages);
+    if (props.publish) this.publishJob = this.addPublishJob(props.publish, packages, publishAll);
   }
 
-  private addPublishJob(p: ReleasePleasePublish, packages: string[]): Job {
+  private addPublishJob(p: ReleasePleasePublish, packages: string[], publishAll: boolean): Job {
     const pm = p.packageManager ?? 'pnpm';
     const job = this.workflow.addJob('publish', {
       runsOn: 'ubuntu-latest',
       needs: this.job,
       // Also runs on a manual dispatch with `publish_all`, to finish a release whose publish partly failed.
-      if: `${this.releasesCreated} || inputs.${PUBLISH_ALL}`,
+      if: publishAll ? `${this.releasesCreated} || inputs.${PUBLISH_ALL}` : this.releasesCreated,
       timeoutMinutes: 15,
       permissions: { contents: 'read', idToken: 'write' },
     });
@@ -152,7 +221,9 @@ export class ReleasePlease extends Construct {
     job.addStep({ name: 'Install', run: pm === 'pnpm' ? 'pnpm install --frozen-lockfile' : 'npm ci' });
     if (p.build !== false) job.addStep({ name: 'Build', run: p.build ?? `${pm} run build` });
     const env: Record<string, string> = {
-      PATHS_RELEASED: `\${{ inputs.${PUBLISH_ALL} && '${JSON.stringify(packages)}' || needs.release-please.outputs.paths_released }}`,
+      PATHS_RELEASED: publishAll
+        ? `\${{ inputs.${PUBLISH_ALL} && '${JSON.stringify(packages)}' || needs.release-please.outputs.paths_released }}`
+        : '${{ needs.release-please.outputs.paths_released }}',
     };
     if (p.npmTokenSecret)
       env.NODE_AUTH_TOKEN = secret(this, p.npmTokenSecret, {
