@@ -1,6 +1,6 @@
 {
   "name": "@cikick/cli",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "cikick command line: synth, check, lock, update, migrate",
   "bin": {
     "cikick": "dist/bin.mjs"
