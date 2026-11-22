@@ -1,0 +1,38 @@
+---
+import { t, stagger } from './util';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const before = stagger([
+  t('c', '# before: whatever the author typed, whenever'),
+  `${t('p', '- ')}${t('k', 'uses')}${t('p', ': ')}actions/checkout@<span class="strike">v3</span>`,
+], 100, 150);
+const after = stagger([
+  t('c', '# after: what cikick synthesizes'),
+  `${t('p', '- ')}${t('k', 'uses')}${t('p', ': ')}actions/checkout@${t('h', '11d5960a3267…')} ${t('c', '# v4')}`,
+], 900, 250);
+---
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap hero-in">
+    <div class="hero-text">
+    <p class="eyebrow">For platform &amp; DevEx teams with many repos</p>
+    <h1 id="hero-title">CDK for <span class="grad">GitHub&nbsp;Actions</span>.</h1>
+    <p class="lede">
+      Write workflows as TypeScript. Share them as npm packages. Get pinned, reviewable YAML in every repo,
+      and update <em>all</em> of them with a pull request instead of a copy-paste campaign.
+    </p>
+    <div class="cta-row">
+      <a class="btn" href="#quickstart">Try it in 3 commands</a>
+      <a class="btn btn-ghost" href={`${base}/docs/guides/quickstart/`}>Read the quickstart</a>
+    </div>
+    </div>
+    <figure class="hero-card" data-anim id="hero-anim" aria-label="An unpinned action reference is replaced by a commit-pinned one with a version comment">
+      <div class="code-win" aria-hidden="true">
+        <div class="win-bar"><span></span><span></span><span></span><b>.github/workflows/ci.yml</b></div>
+        <pre class="code" set:html={before}></pre>
+        <pre class="code code-after" set:html={after}></pre>
+      </div>
+      <figcaption class="sr-only">
+        Before: <code>actions/checkout@v3</code>. After synth: <code>actions/checkout@11d5960a3267…</code> with a <code># v4</code> comment recording the human-readable version.
+      </figcaption>
+    </figure>
+  </div>
+</section>

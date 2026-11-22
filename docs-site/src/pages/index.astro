@@ -1,0 +1,22 @@
+---
+import Landing from '../layouts/Landing.astro';
+import Hero from '../components/landing/Hero.astro';
+import Problem from '../components/landing/Problem.astro';
+import Pipeline from '../components/landing/Pipeline.astro';
+import UpdateLoop from '../components/landing/UpdateLoop.astro';
+import Fleet from '../components/landing/Fleet.astro';
+import WhyNot from '../components/landing/WhyNot.astro';
+import Quickstart from '../components/landing/Quickstart.astro';
+---
+<Landing
+  title="cikick: CDK for GitHub Actions"
+  description="Write GitHub Actions workflows as TypeScript constructs, share them as npm packages, and get pinned, reviewable YAML in every repo. Migrations and a fleet control plane included."
+>
+  <Hero />
+  <Problem />
+  <Pipeline />
+  <UpdateLoop />
+  <Fleet />
+  <WhyNot />
+  <Quickstart />
+</Landing>

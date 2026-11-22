@@ -1,0 +1,59 @@
+---
+const sel = ['api', 'web', 'billing', 'auth', 'search', 'mobile', 'infra', 'docs', 'data'];
+const unsel = ['sandbox', 'experiments', 'legacy-cron'];
+const term = [
+  `<span class="ln st" style="--d:200"><span class="p">$</span> cikick-fleet secrets report --group publishers</span>`,
+  `<span class="ln st" style="--d:500"><span class="bad-t">stale</span>           acme/api  NPM_TOKEN  212d (max 90)</span>`,
+  `<span class="ln st" style="--d:650"><span class="bad-t">stale</span>           acme/web  NPM_TOKEN  212d (max 90)</span>`,
+  `<span class="ln st" style="--d:800"><span class="dim">… 7 more</span></span>`,
+  `<span class="ln st" style="--d:1300"><span class="p">$</span> cikick-fleet secrets rotate NPM_TOKEN --group publishers \\</span>`,
+  `<span class="ln st" style="--d:1400">    --value-from-env NEW_NPM_TOKEN</span>`,
+  `<span class="ln st" style="--d:1700"><span class="dim">Dry run: nothing written. Re-run with --yes to rotate.</span></span>`,
+  `<span class="ln st" style="--d:2300"><span class="p">$</span> … --yes</span>`,
+  `<span class="ln st" style="--d:2600"><span class="ok-t">updated</span>  acme/api NPM_TOKEN</span>`,
+  `<span class="ln st" style="--d:2750"><span class="ok-t">updated</span>  acme/web NPM_TOKEN</span>`,
+  `<span class="ln st" style="--d:2900"><span class="dim">… 7 more</span></span>`,
+].join('');
+---
+<section id="fleet" class="sec sec-alt" aria-labelledby="fleet-title">
+  <div class="wrap">
+    <p class="eyebrow">Fleet</p>
+    <h2 id="fleet-title">One command across the repos you chose. Nothing else.</h2>
+    <p class="sec-lede">
+      <code>cikick-fleet</code> works from a <code>fleet.json</code> allowlist that <em>you</em> select. It never means "everything in the org".
+      Inventory, settings drift, secret age and rotation all run against that list. Anything outside it is refused.
+    </p>
+
+    <div class="fleet" data-anim id="fleetanim" role="group" aria-labelledby="fleet-cap">
+      <div class="tiles" aria-hidden="true">
+        {sel.map((n, i) => (
+          <div class="tile">
+            <span class="tile-name">acme/{n}</span>
+            <span class="vstack" style={`--d:${2600 + i * 150}`}>
+              <span class="v v-old bad">NPM_TOKEN · 212d</span>
+              <span class="v v-new ok">NPM_TOKEN · 0d</span>
+            </span>
+          </div>
+        ))}
+        {unsel.map((n) => (
+          <div class="tile tile-off">
+            <span class="tile-name">acme/{n}</span>
+            <span class="v dim">not selected</span>
+          </div>
+        ))}
+      </div>
+      <pre class="code term sm" aria-hidden="true" set:html={term}></pre>
+    </div>
+    <p id="fleet-cap" class="sr-only">
+      A grid of twelve repositories: nine are in the fleet selection and show a secret that is 212 days old, turning to 0 days after one rotate command; three are not selected and are never touched.
+    </p>
+    <button class="replay" type="button" data-replay="fleetanim">Replay</button>
+
+    <ul class="points">
+      <li><b>Explicit selection.</b> <code>cikick-fleet select</code> lists repos you administer; you pick. Commands refuse any repo outside <code>fleet.json</code>.</li>
+      <li><b>Dry-run by default.</b> <code>settings apply</code> and <code>secrets rotate</code> write nothing without <code>--yes</code>.</li>
+      <li><b>Values never printed.</b> Read from an env var or stdin, sealed with libsodium to each repo's public key, then PUT to GitHub.</li>
+      <li><b>Policies, not vibes.</b> <code>secretPolicies</code> give each secret a max age; <code>secrets report</code> exits non-zero when something is stale or missing.</li>
+    </ul>
+  </div>
+</section>

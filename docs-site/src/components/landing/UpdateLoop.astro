@@ -1,0 +1,53 @@
+---
+import { t, esc } from './util';
+const log = [
+  `<span class="p">$</span> npx cikick update`,
+  `@acme/wf-node-ci: 1.4.0 -&gt; 2.0.0`,
+  `migrate @acme/wf-node-ci@2.0.0: Rename NodeCi prop \`node\` to \`nodeVersion\`…`,
+  `renamed 1 \`node\` prop(s) to \`nodeVersion\``,
+  `deleted legacy .github/workflows/node.yml`,
+  `wrote .github/workflows/ci.yml`,
+  `wrote cikick.lock.json`,
+].map((l) => `<span class="ln">${l}</span>`).join('');
+const diff = [
+  `<span class="ln d-file">cikick.config.ts</span>`,
+  `<span class="ln d-del">-  new NodeCi(app, 'node', { node: 22 })</span>`,
+  `<span class="ln d-add">+  new NodeCi(app, 'node', { nodeVersion: 22 })</span>`,
+  `<span class="ln d-file">.github/workflows/node.yml</span>`,
+  `<span class="ln d-del">-  (legacy generated file removed)</span>`,
+].join('');
+const steps = [
+  { who: 'shared package repo', title: 'Publish @acme/wf-node-ci 2.0.0', body: 'A breaking rename ships with a codemod. One release, written once by the platform team.' },
+  { who: 'every consumer repo', title: 'Renovate opens a PR', body: 'It bumps the dependency like any other, and runs <code>npx cikick update</code> as a post-upgrade task.' },
+  { who: 'in the PR branch', title: 'cikick update runs the migration', body: 'Migrations between the locked and installed versions run in order, editing <code>cikick.config.ts</code> with ts-morph.', term: log },
+  { who: 'in the PR branch', title: 'Synth, then the PR shows the diff', body: 'Config, generated YAML and lockfile change together, so a reviewer sees exactly what CI will do.', term: diff },
+  { who: 'in CI', title: 'cikick check goes green', body: 'Generated files match the config, the lock covers every action, and policy checks pass. Merge.', ok: true },
+];
+---
+<section id="loop" class="sec" aria-labelledby="loop-title">
+  <div class="wrap">
+    <p class="eyebrow">The update loop</p>
+    <h2 id="loop-title">A breaking change becomes a pull request, not a migration project.</h2>
+    <p class="sec-lede">
+      The platform team releases a new major. Every repo gets a PR that already contains the migration. Humans review a diff; nobody hunts for a Slack thread.
+    </p>
+    <ol class="loop" data-anim id="loopanim">
+      {steps.map((s, i) => (
+        <li class="step st" style={`--d:${i * 1100}`}>
+          <span class="step-dot" aria-hidden="true">{s.ok ? '✓' : i + 1}</span>
+          <div class="step-body">
+            <p class="step-who">{s.who}</p>
+            <h3>{s.title}</h3>
+            <p set:html={s.body}></p>
+            {s.term && <pre class="code term sm" aria-label="Example terminal output" set:html={s.term}></pre>}
+            {s.ok && <p class="pass"><span class="pill ok">check passed</span> <code>npx cikick check</code> exits 0</p>}
+          </div>
+        </li>
+      ))}
+    </ol>
+    <button class="replay" type="button" data-replay="loopanim">Replay</button>
+    <p class="note center">
+      Without a codemod you can still ship a <em>check</em> with <code>enforceAfter</code>: a warning today, a CI error after a date you choose.
+    </p>
+  </div>
+</section>

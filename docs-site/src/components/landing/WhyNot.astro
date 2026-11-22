@@ -1,0 +1,77 @@
+---
+const alts = [
+  {
+    name: 'Reusable workflows',
+    better: 'Native to GitHub: no build step, no extra tooling, runs server-side. For "same pipeline, a few inputs" this is the simplest thing that works, and you should use it.',
+    gap: 'The caller gets inputs and nothing else: you cannot add a step to one job, change one runner, or inject a policy. Each caller still pins its own <code>@ref</code> and still needs a bump PR.',
+    together: 'Compatible. A cikick Job can <code>uses:</code> a reusable workflow, and cikick pins its ref.',
+  },
+  {
+    name: 'Composite actions',
+    better: 'The right tool for bundling steps (setup, build, deploy) behind one <code>uses:</code>. Native, versioned, shareable, zero tooling.',
+    gap: 'They are steps only. They cannot define jobs, triggers, permissions, matrices or <code>needs</code>, so the workflow skeleton is still copy-pasted around them.',
+    together: 'Compatible. Keep your composite actions; cikick generates the skeleton that calls them.',
+  },
+  {
+    name: 'Dependabot / Renovate alone',
+    better: 'Excellent at noticing new versions and opening PRs, and Renovate can pin action digests (<code>helpers:pinGitHubActionDigests</code>). If your problem is only "stale action versions", this may be enough.',
+    gap: 'They bump strings. They do not know your shared workflow renamed an input, and they do not keep nine copies of a workflow structurally the same.',
+    together: 'cikick uses Renovate as the delivery truck: it bumps the package, then runs <code>cikick update</code> to migrate and re-synth.',
+  },
+  {
+    name: 'projen',
+    better: 'The closest relative: TypeScript-defined, synthesized config, with GitHub workflow support. It is far broader (whole-project scaffolding, release automation) and far more mature, with a big community.',
+    gap: 'It manages the whole project, which is more than some teams want to adopt. As far as we know it has no equivalent of migrations shipped inside a shared package, a per-action SHA lockfile, or a multi-repo control plane. Those are what cikick adds.',
+    together: 'Pick one generator per repo. If projen already runs your repos and works, you may not need cikick.',
+  },
+  {
+    name: 'github-workflows-kt',
+    better: 'A Kotlin DSL with typed bindings for popular actions, so <code>with:</code> inputs are checked at compile time. In a Kotlin shop that is a real advantage cikick does not have: our <code>uses</code>/<code>with</code> are plain strings and records.',
+    gap: 'It generates workflows but, as far as we know, does not ship package migrations, a lockfile, or fleet tooling. And it needs Kotlin scripting in a mostly-JS org.',
+    together: 'Alternatives, not companions. Choose by your team\'s language.',
+  },
+  {
+    name: 'zizmor / actionlint',
+    better: 'Dedicated static analysis. zizmor audits security issues in workflows in more depth than cikick\'s small stock policy set; actionlint catches syntax and expression mistakes. Both work on any YAML.',
+    gap: 'They find problems. They do not generate, share or update workflows, so fixing 40 repos is still on you.',
+    together: 'Run them on cikick\'s generated YAML too. Defence in depth.',
+  },
+];
+---
+<section id="why-not" class="sec" aria-labelledby="why-title">
+  <div class="wrap">
+    <p class="eyebrow">Why not just…</p>
+    <h2 id="why-title">Honest comparisons.</h2>
+    <p class="sec-lede">
+      Most of these are better than cikick at the thing they do. cikick earns its place only when you need <em>shared, versioned, migratable</em> workflows across many repos.
+    </p>
+    <div class="alts">
+      {alts.map((a) => (
+        <article class="alt">
+          <h3>{a.name}</h3>
+          <p><span class="tag ok">Better at</span> <span set:html={a.better}></span></p>
+          <p><span class="tag bad">Where it stops</span> <span set:html={a.gap}></span></p>
+          <p><span class="tag neutral">With cikick</span> <span set:html={a.together}></span></p>
+        </article>
+      ))}
+    </div>
+    <div class="fit">
+      <div class="card">
+        <h3>cikick is a good fit when</h3>
+        <ul>
+          <li>You have roughly 10+ repos with similar pipelines, and a team that can own a shared package.</li>
+          <li>Breaking changes to shared CI happen, and you want them as migrations, not announcements.</li>
+          <li>Auditors or security want every action pinned and every secret on a rotation clock.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>It is probably the wrong call when</h3>
+        <ul>
+          <li>You have a handful of repos. Reusable workflows plus Renovate are less machinery.</li>
+          <li>Nobody wants a build step between editing CI and running it. cikick adds one.</li>
+          <li>You need a mature, battle-tested ecosystem today. cikick is version 0.1.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
