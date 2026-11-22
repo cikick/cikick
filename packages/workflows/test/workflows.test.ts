@@ -98,3 +98,21 @@ describe('ConventionalCommits', () => {
     expect(errors(r)).toEqual([]);
   });
 });
+
+describe('ReleasePlease publish', () => {
+  it('adds an OIDC publish job gated on releases_created', async () => {
+    const { r, yaml } = await run(
+      (app) => new ReleasePlease(app, 'rp', { packages: ['packages/a'], publish: { npmTokenSecret: 'NPM_TOKEN' } }),
+    );
+    const job = yaml('.github/workflows/release-please.yml').jobs.publish;
+    expect(job.needs).toBe('release-please');
+    expect(job.if).toBe("needs.release-please.outputs.releases_created == 'true'");
+    expect(job.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
+    const step = job.steps.at(-1);
+    expect(step.env.PATHS_RELEASED).toBe('${{ needs.release-please.outputs.paths_released }}');
+    expect(step.env.NODE_AUTH_TOKEN).toBe('${{ secrets.NPM_TOKEN }}');
+    expect(step.run).toContain('pnpm pack');
+    expect(step.run).not.toContain('${{');
+    expect(errors(r)).toEqual([]);
+  });
+});
