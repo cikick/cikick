@@ -157,6 +157,65 @@ Members: `props: StepProps` (mutable), `actionRef: ActionRef | undefined`, `rend
 
 Also exported: `REF_COMMENT_MARK`, and the `IConstruct` type.
 
+## Writing `run` scripts
+
+### `script(path, { vars? })` (recommended for long scripts)
+
+Keep long scripts in `.sh` files with normal shell syntax (no escaping, shellcheck and editor support) and read them at synth time:
+
+```ts
+import { script } from '@cikick/core';
+
+job.addStep({ run: script('.github/scripts/move-major-tag.sh') });
+job.addStep({ run: script('scripts/deploy.sh', { vars: { ENV: 'prod' } }) }); // replaces @@ENV@@
+```
+
+Relative paths resolve against the repo directory (the CLI's `--dir`); a missing file throws. CRLF is normalised and trailing whitespace trimmed, so output is deterministic. With `vars`, every `@@NAME@@` placeholder must be replaced or synth fails.
+
+### `sh` tagged template (short scripts)
+
+`sh` removes the common indentation, drops the empty first line and trailing blank lines (no trailing newline, same as `lines.join('\n')`), and re-indents multi-line interpolated values to the line they are inserted in.
+
+```ts
+import { sh } from '@cikick/core';
+
+job.addStep({
+  run: sh`
+    set -euo pipefail
+    if [ -n "$TOKEN" ]; then
+      ${installCommands}
+    fi
+  `,
+});
+```
+
+**Escaping.** The template is cooked like any JavaScript template literal, so a bare `${...}` is a JavaScript interpolation:
+
+- Plain `$VAR` and `$(cmd)` need nothing.
+- Shell parameter expansion such as `${var%%.*}` or `${TOKEN:-}` needs `\${...}` (`\${var%%.*}`), or put the script in a file and use `script()`.
+- A literal backslash is `\\`, and `\n` is a real newline.
+- Prefer the expression helpers below over writing `\${{ }}` by hand.
+
+### Expression helpers
+
+`github`, `env`, `vars`, `inputs`, `steps`, `needs`, `matrix`, `runner` and `job` are proxies that build `${{ }}` expressions by property access; `expr('...')` builds a raw one. They convert to strings in templates and can be used directly as values in `env`, `with`, `if` and other props.
+
+```ts
+import { expr, github, inputs, steps, sh } from '@cikick/core';
+
+step.run = sh`echo "building ${github.ref_name}, output ${steps.build.outputs.path}"`;
+// echo "building ${{ github.ref_name }}, output ${{ steps.build.outputs.path }}"
+{ if: expr("github.ref == 'refs/heads/main'"), env: { TAG: inputs.tag } }
+```
+
+For secrets use `secret(scope, 'NAME')`, which also records the secret in the manifest; there is intentionally no `secrets` proxy.
+
+**Script injection.** Expressions such as `inputs.*`, `github.event.*` and `github.head_ref` are attacker-controllable, and the `noScriptInjection` policy flags them inside `run`. Pass them through `env` and read the shell variable:
+
+```ts
+job.addStep({ env: { TAG: inputs.tag }, run: sh`git tag "$TAG"` });
+```
+
 ## ActionRef
 
 ```ts

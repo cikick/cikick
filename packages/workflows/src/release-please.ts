@@ -1,4 +1,4 @@
-import { ManagedFile, Workflow, secret, type Job } from '@cikick/core';
+import { ManagedFile, Workflow, secret, sh, type Job } from '@cikick/core';
 import { Construct } from 'constructs';
 
 const PUBLISH_ALL = 'publish_all';
@@ -234,17 +234,17 @@ export class ReleasePlease extends Construct {
     job.addStep({
       name: 'Publish released packages',
       env,
-      run: [
-        'set -euo pipefail',
-        'out="$RUNNER_TEMP/packages"; mkdir -p "$out"',
-        `for p in $(jq -r '.[]' <<<"$PATHS_RELEASED"); do (cd "$p" && ${pm} pack --pack-destination "$out"); done`,
-        // Idempotent: skip versions already on the registry so a re-run after a partial failure can finish the rest.
-        'for f in "$out"/*.tgz; do',
-        '  spec=$(tar -xOf "$f" package/package.json | jq -r \'.name + "@" + .version\')',
-        '  if npm view "$spec" version >/dev/null 2>&1; then echo "skip $spec (already published)"; continue; fi',
-        `  npm publish "$f" --access ${p.access ?? 'public'}`,
-        'done',
-      ].join('\n'),
+      // Idempotent: skips versions already on the registry so a re-run after a partial failure can finish the rest.
+      run: sh`
+        set -euo pipefail
+        out="$RUNNER_TEMP/packages"; mkdir -p "$out"
+        for p in $(jq -r '.[]' <<<"$PATHS_RELEASED"); do (cd "$p" && ${pm} pack --pack-destination "$out"); done
+        for f in "$out"/*.tgz; do
+          spec=$(tar -xOf "$f" package/package.json | jq -r '.name + "@" + .version')
+          if npm view "$spec" version >/dev/null 2>&1; then echo "skip $spec (already published)"; continue; fi
+          npm publish "$f" --access ${p.access ?? 'public'}
+        done
+      `,
     });
     return job;
   }
