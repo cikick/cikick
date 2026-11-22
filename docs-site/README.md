@@ -4,9 +4,7 @@ Astro + Starlight. docs-site is part of the pnpm workspace: `pnpm install` at th
 
 ## Deploying the docs
 
-**GitHub Pages** (default, base `/cikick`): `.github/workflows/docs-pages.yml` (generated from the root `cikick.config.ts`).
-
-**Cloudflare Workers** (static assets, base `/`): the base switches to `/` automatically when `WORKERS_CI` (Workers Builds) or `WRANGLER_COMMAND` (`wrangler deploy`) is set; override with `DOCS_BASE` / `DOCS_SITE`.
+Deployed to **Cloudflare Workers** (static assets, base `/`). Override with `DOCS_BASE` / `DOCS_SITE`.
 
 ### Option A: repo-root config (default Git-connected build)
 
