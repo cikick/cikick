@@ -2,12 +2,12 @@
   "name": "@cikick/workflows",
   "version": "0.6.0",
   "description": "Reusable cikick workflow constructs: Node CI, release-please, conventional commit PR titles",
+  "homepage": "https://github.com/cikick/cikick",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cikick/cikick.git",
     "directory": "packages/workflows"
   },
-  "homepage": "https://github.com/cikick/cikick",
   "files": [
     "dist"
   ],

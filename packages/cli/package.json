@@ -2,12 +2,12 @@
   "name": "@cikick/cli",
   "version": "0.5.1",
   "description": "cikick command line: synth, check, lock, update, migrate",
+  "homepage": "https://github.com/cikick/cikick",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cikick/cikick.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/cikick/cikick",
   "bin": {
     "cikick": "dist/bin.mjs"
   },
