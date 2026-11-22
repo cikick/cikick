@@ -86,7 +86,11 @@ export async function inventoryRepo(client: GitHubClient, full: string): Promise
         res.error = `${LOCKFILE_NAME} is not valid JSON`;
       }
     }
-    const dir = await getOrUndefined(client, 'GET /repos/{owner}/{repo}/contents/{path}', { owner, repo, path: '.github/workflows' });
+    const dir = await getOrUndefined(client, 'GET /repos/{owner}/{repo}/contents/{path}', {
+      owner,
+      repo,
+      path: '.github/workflows',
+    });
     const files = (Array.isArray(dir) ? dir : []).filter((f: any) => f.type === 'file' && /\.ya?ml$/i.test(f.name));
     for (const f of files) {
       const text = await readText(client, owner, repo, f.path ?? `.github/workflows/${f.name}`);
@@ -101,8 +105,14 @@ export async function inventoryRepo(client: GitHubClient, full: string): Promise
 
 /** Compare dotted numeric versions (prerelease suffix ignored beyond numeric core). */
 export function compareVersions(a: string, b: string): number {
-  const pa = a.split(/[-+]/)[0].split('.').map((x) => parseInt(x, 10) || 0);
-  const pb = b.split(/[-+]/)[0].split('.').map((x) => parseInt(x, 10) || 0);
+  const pa = a
+    .split(/[-+]/)[0]
+    .split('.')
+    .map((x) => parseInt(x, 10) || 0);
+  const pb = b
+    .split(/[-+]/)[0]
+    .split('.')
+    .map((x) => parseInt(x, 10) || 0);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const d = (pa[i] ?? 0) - (pb[i] ?? 0);
     if (d) return d < 0 ? -1 : 1;
@@ -128,7 +138,9 @@ export function summarizePackages(repos: RepoInventory[]): PackageSummary[] {
         name,
         max,
         versions: Object.fromEntries(versions.map((v) => [v, vm.get(v)!])),
-        outdated: versions.filter((v) => compareVersions(v, max) < 0).flatMap((v) => vm.get(v)!.map((repo) => ({ repo, version: v }))),
+        outdated: versions
+          .filter((v) => compareVersions(v, max) < 0)
+          .flatMap((v) => vm.get(v)!.map((repo) => ({ repo, version: v }))),
       };
     });
 }

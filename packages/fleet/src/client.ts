@@ -21,7 +21,7 @@ export function createClient(token: string = tokenFromEnv()): GitHubClient {
   const octokit = new Octokit({ auth: token, userAgent: 'cikick-fleet' });
   return {
     request: (route, params) => octokit.request(route, params as any) as Promise<{ status: number; data: any }>,
-    paginate: (route, params) => octokit.paginate(route, { per_page: 100, ...(params ?? {}) } as any) as Promise<any[]>,
+    paginate: (route, params) => octokit.paginate(route, { per_page: 100, ...params } as any) as Promise<any[]>,
   };
 }
 
@@ -30,7 +30,11 @@ export function errorStatus(e: unknown): number | undefined {
 }
 
 /** Run a GET and map 404 to `undefined`. */
-export async function getOrUndefined(client: GitHubClient, route: string, params?: Record<string, unknown>): Promise<any | undefined> {
+export async function getOrUndefined(
+  client: GitHubClient,
+  route: string,
+  params?: Record<string, unknown>,
+): Promise<any | undefined> {
   try {
     return (await client.request(route, params)).data;
   } catch (e) {

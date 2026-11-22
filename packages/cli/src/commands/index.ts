@@ -57,9 +57,18 @@ export function buildProgram(): Command {
       const m = secretsManifest(app);
       if (o.json) return console.log(JSON.stringify(m, null, 2));
       if (!m.length) return console.log('No secrets declared.');
-      const rows = [['NAME', 'SCOPE', 'ENVIRONMENT', 'MAX AGE (d)', 'PROVIDER'], ...m.map((s) => [s.name, s.scope, s.environment ?? '-', String(s.maxAgeDays ?? '-'), s.provider ?? '-'])];
+      const rows = [
+        ['NAME', 'SCOPE', 'ENVIRONMENT', 'MAX AGE (d)', 'PROVIDER'],
+        ...m.map((s) => [s.name, s.scope, s.environment ?? '-', String(s.maxAgeDays ?? '-'), s.provider ?? '-']),
+      ];
       const w = rows[0]!.map((_, i) => Math.max(...rows.map((r) => r[i]!.length)));
-      for (const r of rows) console.log(r.map((c, i) => c.padEnd(w[i]!)).join('  ').trimEnd());
+      for (const r of rows)
+        console.log(
+          r
+            .map((c, i) => c.padEnd(w[i]!))
+            .join('  ')
+            .trimEnd(),
+        );
     });
 
   dir(program.command('init').description('write a starter cikick.config.ts')).action((o) => {

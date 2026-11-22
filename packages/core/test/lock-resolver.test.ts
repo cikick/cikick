@@ -1,5 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
-import { App, FrozenLockError, GitHubResolver, LockResolver, MissingLockEntryError, Workflow, readLockfile, serializeLockfile, synth, writeLockfile, type Lockfile } from '../src/index.js';
+import {
+  App,
+  FrozenLockError,
+  GitHubResolver,
+  LockResolver,
+  MissingLockEntryError,
+  Workflow,
+  readLockfile,
+  serializeLockfile,
+  synth,
+  writeLockfile,
+  type Lockfile,
+} from '../src/index.js';
 import { FakeResolver, SHA, tmp } from './helpers.js';
 
 const appWith = (uses: string) => {
@@ -10,7 +22,11 @@ const appWith = (uses: string) => {
 
 describe('lockfile', () => {
   it('serializes with stable sorted keys and roundtrips', () => {
-    const lock: Lockfile = { version: 1, packages: { z: '1', a: '2' }, actions: { 'b/b@v1': { sha: SHA('b'), resolvedAt: 't' }, 'a/a@v1': { resolvedAt: 't', sha: SHA('a') } } };
+    const lock: Lockfile = {
+      version: 1,
+      packages: { z: '1', a: '2' },
+      actions: { 'b/b@v1': { sha: SHA('b'), resolvedAt: 't' }, 'a/a@v1': { resolvedAt: 't', sha: SHA('a') } },
+    };
     const s = serializeLockfile(lock);
     expect(s.indexOf('a/a@v1')).toBeLessThan(s.indexOf('b/b@v1'));
     expect(s.indexOf('"actions"')).toBeLessThan(s.indexOf('"packages"'));
@@ -23,15 +39,28 @@ describe('lockfile', () => {
 
   it('frozen errors when entry missing, passes when locked', async () => {
     const dir = tmp();
-    await expect(synth(appWith('actions/checkout@v4'), { repoDir: dir, frozen: true, resolver: new FakeResolver() })).rejects.toBeInstanceOf(FrozenLockError);
-    const lock: Lockfile = { version: 1, packages: {}, actions: { 'actions/checkout@v4': { sha: SHA('d'), resolvedAt: 't' } } };
+    await expect(
+      synth(appWith('actions/checkout@v4'), { repoDir: dir, frozen: true, resolver: new FakeResolver() }),
+    ).rejects.toBeInstanceOf(FrozenLockError);
+    const lock: Lockfile = {
+      version: 1,
+      packages: {},
+      actions: { 'actions/checkout@v4': { sha: SHA('d'), resolvedAt: 't' } },
+    };
     const res = await synth(appWith('actions/checkout@v4'), { repoDir: dir, frozen: true, lock });
     expect(res.files[0]!.content).toContain(`actions/checkout@${SHA('d')} # v4`);
   });
 
   it('frozen ignores sha refs; existing lock entries are not re-resolved; stale entries dropped', async () => {
     const r = new FakeResolver();
-    const lock: Lockfile = { version: 1, packages: { p: '1.0.0' }, actions: { 'old/x@v1': { sha: SHA('1'), resolvedAt: 't' }, 'actions/checkout@v4': { sha: SHA('d'), resolvedAt: 't' } } };
+    const lock: Lockfile = {
+      version: 1,
+      packages: { p: '1.0.0' },
+      actions: {
+        'old/x@v1': { sha: SHA('1'), resolvedAt: 't' },
+        'actions/checkout@v4': { sha: SHA('d'), resolvedAt: 't' },
+      },
+    };
     const res = await synth(appWith('actions/checkout@v4'), { repoDir: tmp(), resolver: r, lock });
     expect(r.calls).toEqual([]);
     expect(Object.keys(res.lock.actions)).toEqual(['actions/checkout@v4']);
@@ -42,7 +71,11 @@ describe('lockfile', () => {
   });
 
   it('LockResolver', async () => {
-    const lr = new LockResolver({ version: 1, packages: {}, actions: { 'a/b@v1': { sha: SHA('f'), resolvedAt: 't' } } });
+    const lr = new LockResolver({
+      version: 1,
+      packages: {},
+      actions: { 'a/b@v1': { sha: SHA('f'), resolvedAt: 't' } },
+    });
     expect(await lr.resolve('a', 'b', 'v1')).toBe(SHA('f'));
     expect(await lr.resolve('a', 'b', SHA('9'))).toBe(SHA('9'));
     await expect(lr.resolve('a', 'b', 'v2')).rejects.toBeInstanceOf(MissingLockEntryError);
@@ -83,7 +116,9 @@ describe('GitHubResolver', () => {
 
 import { GitResolver, FallbackResolver } from '../src/resolver.js';
 describe('GitResolver', () => {
-  const A = 'a'.repeat(40), B = 'b'.repeat(40), C = 'c'.repeat(40);
+  const A = 'a'.repeat(40),
+    B = 'b'.repeat(40),
+    C = 'c'.repeat(40);
   it('prefers dereferenced annotated tag', async () => {
     const r = new GitResolver({ lsRemote: async () => `${A}\trefs/tags/v4\n${B}\trefs/tags/v4^{}\n` });
     expect(await r.resolve('o', 'r', 'v4')).toBe(B);
@@ -93,7 +128,11 @@ describe('GitResolver', () => {
     expect(await r.resolve('o', 'r', 'main')).toBe(C);
   });
   it('FallbackResolver tries next', async () => {
-    const bad = { resolve: async () => { throw new Error('x'); } };
+    const bad = {
+      resolve: async () => {
+        throw new Error('x');
+      },
+    };
     const good = { resolve: async () => A };
     expect(await new FallbackResolver(bad, good).resolve('o', 'r', 'v1')).toBe(A);
   });

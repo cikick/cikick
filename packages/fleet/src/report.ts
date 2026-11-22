@@ -6,7 +6,12 @@ import { secretsReport } from './secrets.js';
 import { settingsDiff } from './settings.js';
 import type { FleetConfig } from './types.js';
 
-export async function buildReport(client: GitHubClient, config: FleetConfig, targets: string[], opts: { now?: Date; maxAgeDays?: number } = {}): Promise<FleetReportData> {
+export async function buildReport(
+  client: GitHubClient,
+  config: FleetConfig,
+  targets: string[],
+  opts: { now?: Date; maxAgeDays?: number } = {},
+): Promise<FleetReportData> {
   const now = opts.now ?? new Date();
   return {
     generatedAt: now.toISOString(),
@@ -17,7 +22,13 @@ export async function buildReport(client: GitHubClient, config: FleetConfig, tar
   };
 }
 
-export async function writeHtmlReport(client: GitHubClient, config: FleetConfig, targets: string[], out: string, opts: { now?: Date } = {}): Promise<FleetReportData> {
+export async function writeHtmlReport(
+  client: GitHubClient,
+  config: FleetConfig,
+  targets: string[],
+  out: string,
+  opts: { now?: Date } = {},
+): Promise<FleetReportData> {
   const data = await buildReport(client, config, targets, opts);
   writeFileSync(out, renderHtmlReport(data));
   return data;

@@ -88,7 +88,11 @@ export async function runChecks(app: App, opts: RunChecksOptions): Promise<Findi
     for (const check of Checks.of(node).all) {
       const res = await check.run(ctx);
       for (const f of res) {
-        findings.push({ ...f, checkId: f.checkId || check.id, severity: effectiveSeverity(f.severity ?? check.severity, check.enforceAfter, now) });
+        findings.push({
+          ...f,
+          checkId: f.checkId || check.id,
+          severity: effectiveSeverity(f.severity ?? check.severity, check.enforceAfter, now),
+        });
       }
     }
   }

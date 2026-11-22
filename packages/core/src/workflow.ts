@@ -1,6 +1,8 @@
-import { Construct, IConstruct } from 'constructs';
+import type { IConstruct } from 'constructs';
+import { Construct } from 'constructs';
 import { ActionRef } from './action-ref.js';
-import { OverrideOp, applyOverrides, kebab, prune, snake } from './overrides.js';
+import type { OverrideOp } from './overrides.js';
+import { applyOverrides, kebab, prune, snake } from './overrides.js';
 
 const WORKFLOW = Symbol.for('@cikick/core.Workflow');
 const JOB = Symbol.for('@cikick/core.Job');
@@ -234,7 +236,9 @@ export class Job extends Construct {
       p.needs === undefined
         ? undefined
         : (Array.isArray(p.needs) ? p.needs : [p.needs]).map((n) => (typeof n === 'string' ? n : n.node.id));
-    const strat = p.strategy && prune({ matrix: p.strategy.matrix, 'fail-fast': p.strategy.failFast, 'max-parallel': p.strategy.maxParallel });
+    const strat =
+      p.strategy &&
+      prune({ matrix: p.strategy.matrix, 'fail-fast': p.strategy.failFast, 'max-parallel': p.strategy.maxParallel });
     const obj = prune({
       name: p.name,
       if: p.if,

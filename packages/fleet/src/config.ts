@@ -36,35 +36,48 @@ function optBool(v: unknown, path: string): void {
 
 function validateSettingsPolicy(p: unknown): SettingsPolicy {
   if (!isObj(p)) fail('settingsPolicy', 'expected an object');
-  if (p.defaultWorkflowPermissions !== undefined) oneOf(p.defaultWorkflowPermissions, 'settingsPolicy.defaultWorkflowPermissions', ['read', 'write']);
+  if (p.defaultWorkflowPermissions !== undefined)
+    oneOf(p.defaultWorkflowPermissions, 'settingsPolicy.defaultWorkflowPermissions', ['read', 'write']);
   optBool(p.canApprovePullRequestReviews, 'settingsPolicy.canApprovePullRequestReviews');
-  if (p.allowedActions !== undefined) oneOf(p.allowedActions, 'settingsPolicy.allowedActions', ['all', 'local_only', 'selected']);
+  if (p.allowedActions !== undefined)
+    oneOf(p.allowedActions, 'settingsPolicy.allowedActions', ['all', 'local_only', 'selected']);
   if (p.selectedActions !== undefined) {
     const s = p.selectedActions;
     if (!isObj(s)) fail('settingsPolicy.selectedActions', 'expected an object');
     optBool(s.githubOwnedAllowed, 'settingsPolicy.selectedActions.githubOwnedAllowed');
     optBool(s.verifiedAllowed, 'settingsPolicy.selectedActions.verifiedAllowed');
-    if (s.patternsAllowed !== undefined && !(Array.isArray(s.patternsAllowed) && s.patternsAllowed.every((x) => typeof x === 'string')))
+    if (
+      s.patternsAllowed !== undefined &&
+      !(Array.isArray(s.patternsAllowed) && s.patternsAllowed.every((x) => typeof x === 'string'))
+    )
       fail('settingsPolicy.selectedActions.patternsAllowed', 'expected string[]');
   }
   if (p.requireRuleset !== undefined) {
     const r = p.requireRuleset;
-    if (!isObj(r) || typeof r.branch !== 'string' || !r.branch) fail('settingsPolicy.requireRuleset', 'expected { branch: string }');
+    if (!isObj(r) || typeof r.branch !== 'string' || !r.branch)
+      fail('settingsPolicy.requireRuleset', 'expected { branch: string }');
   }
   return p as SettingsPolicy;
 }
 
-function validateSecretPolicy(p: unknown, i: number, config: { repos: string[]; groups: Record<string, string[]> }): SecretPolicy {
+function validateSecretPolicy(
+  p: unknown,
+  i: number,
+  config: { repos: string[]; groups: Record<string, string[]> },
+): SecretPolicy {
   const at = `secretPolicies[${i}]`;
   if (!isObj(p)) fail(at, 'expected an object');
   if (typeof p.name !== 'string' || !p.name) fail(`${at}.name`, 'expected non-empty string');
   oneOf(p.scope, `${at}.scope`, ['repo', 'env']);
-  if (p.scope === 'env' && (typeof p.environment !== 'string' || !p.environment)) fail(`${at}.environment`, 'required when scope is "env"');
+  if (p.scope === 'env' && (typeof p.environment !== 'string' || !p.environment))
+    fail(`${at}.environment`, 'required when scope is "env"');
   if (typeof p.maxAgeDays !== 'number' || !(p.maxAgeDays > 0)) fail(`${at}.maxAgeDays`, 'expected positive number');
   if (p.repos !== undefined) {
-    for (const r of repoList(p.repos, `${at}.repos`)) if (!config.repos.includes(r)) fail(`${at}.repos`, `${r} is not in "repos"`);
+    for (const r of repoList(p.repos, `${at}.repos`))
+      if (!config.repos.includes(r)) fail(`${at}.repos`, `${r} is not in "repos"`);
   }
-  if (p.group !== undefined && (typeof p.group !== 'string' || !config.groups[p.group])) fail(`${at}.group`, `unknown group ${JSON.stringify(p.group)}`);
+  if (p.group !== undefined && (typeof p.group !== 'string' || !config.groups[p.group]))
+    fail(`${at}.group`, `unknown group ${JSON.stringify(p.group)}`);
   return p as unknown as SecretPolicy;
 }
 

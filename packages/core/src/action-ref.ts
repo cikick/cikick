@@ -16,10 +16,17 @@ export class ActionRef {
   /** Parse `owner/repo[/path]@ref`. Throws on invalid input. */
   static of(spec: string): ActionRef {
     const at = spec.lastIndexOf('@');
-    if (at <= 0 || at === spec.length - 1) throw new Error(`Invalid action ref "${spec}" (expected owner/repo[/path]@ref)`);
+    if (at <= 0 || at === spec.length - 1)
+      throw new Error(`Invalid action ref "${spec}" (expected owner/repo[/path]@ref)`);
     const parts = spec.slice(0, at).split('/');
-    if (parts.length < 2 || !parts[0] || !parts[1]) throw new Error(`Invalid action ref "${spec}" (expected owner/repo[/path]@ref)`);
-    return new ActionRef({ owner: parts[0], repo: parts[1], path: parts.slice(2).join('/') || undefined, ref: spec.slice(at + 1) });
+    if (parts.length < 2 || !parts[0] || !parts[1])
+      throw new Error(`Invalid action ref "${spec}" (expected owner/repo[/path]@ref)`);
+    return new ActionRef({
+      owner: parts[0],
+      repo: parts[1],
+      path: parts.slice(2).join('/') || undefined,
+      ref: spec.slice(at + 1),
+    });
   }
 
   /** Like `of`, but returns undefined for local (`./`) and `docker://` references. */

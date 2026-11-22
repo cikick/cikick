@@ -1,5 +1,6 @@
 import { GENERATED_HEADER, type Check, type CikickPackageExports, type Migration } from '@cikick/core';
-import { Node, Project, SyntaxKind } from 'ts-morph';
+import type { Project } from 'ts-morph';
+import { Node, SyntaxKind } from 'ts-morph';
 
 /** Rename prop `node` to `nodeVersion` in every `new NodeCi(scope, id, { node: ... })`. Returns number of renames. */
 export function renameNodeProp(project: Project): number {
@@ -24,7 +25,8 @@ export function renameNodeProp(project: Project): number {
 export const migrations: Migration[] = [
   {
     version: '2.0.0',
-    description: 'Rename NodeCi prop `node` to `nodeVersion`; remove legacy cikick-generated .github/workflows/node.yml',
+    description:
+      'Rename NodeCi prop `node` to `nodeVersion`; remove legacy cikick-generated .github/workflows/node.yml',
     async run(ctx) {
       const n = renameNodeProp(ctx.project);
       if (n) {
@@ -53,7 +55,14 @@ export const nvmrcCheck: Check = {
     if (c === undefined) return [];
     const major = parseInt(c.trim().replace(/^v/, ''), 10);
     if (Number.isNaN(major) || major >= 20) return [];
-    return [{ checkId: '@acme/wf-node-ci:nvmrc-min-node', severity: 'warn', path: '.nvmrc', message: `Node ${major} is end-of-life; set nodeVersion >= 20 in NodeCi` }];
+    return [
+      {
+        checkId: '@acme/wf-node-ci:nvmrc-min-node',
+        severity: 'warn',
+        path: '.nvmrc',
+        message: `Node ${major} is end-of-life; set nodeVersion >= 20 in NodeCi`,
+      },
+    ];
   },
 };
 

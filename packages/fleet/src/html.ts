@@ -11,7 +11,10 @@ export interface FleetReportData {
 }
 
 export const esc = (s: unknown): string =>
-  String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  String(s ?? '').replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
+  );
 
 const fmt = (v: unknown) => (v === undefined ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v));
 const badge = (cls: string, text: string) => `<span class="b ${cls}">${esc(text)}</span>`;
@@ -26,16 +29,28 @@ export function renderHtmlReport(d: FleetReportData): string {
     .map((r) => {
       const gen = r.workflows.filter((w) => w.generated).length;
       return `<tr><td>${esc(r.repo)}</td><td>${r.error ? badge('bad', 'error') : r.adopted ? badge('ok', 'adopted') : badge('muted', 'not adopted')}</td>
-<td>${esc(Object.entries(r.packages).map(([k, v]) => `${k}@${v}`).join(', ') || '—')}</td>
+<td>${esc(
+        Object.entries(r.packages)
+          .map(([k, v]) => `${k}@${v}`)
+          .join(', ') || '—',
+      )}</td>
 <td>${r.workflows.length} (${gen} generated)</td><td>${r.unpinnedCount ? badge('warn', `${r.unpinnedCount} unpinned`) : badge('ok', '0')}</td></tr>`;
     })
     .join('\n');
   const pkgRows = d.inventory.packages
-    .map((p) => `<tr><td>${esc(p.name)}</td><td>${esc(p.max)}</td><td>${esc(Object.entries(p.versions).map(([v, r]) => `${v} (${r.length})`).join(', '))}</td><td>${p.outdated.length ? badge('warn', `${p.outdated.length} outdated`) : badge('ok', 'current')}</td></tr>`)
+    .map(
+      (p) =>
+        `<tr><td>${esc(p.name)}</td><td>${esc(p.max)}</td><td>${esc(
+          Object.entries(p.versions)
+            .map(([v, r]) => `${v} (${r.length})`)
+            .join(', '),
+        )}</td><td>${p.outdated.length ? badge('warn', `${p.outdated.length} outdated`) : badge('ok', 'current')}</td></tr>`,
+    )
     .join('\n');
   const secRows = d.secrets.rows
     .map((r) => {
-      const cls = r.status === 'ok' ? 'ok' : r.status === 'untracked' ? 'muted' : r.status === 'missing' ? 'bad' : 'warn';
+      const cls =
+        r.status === 'ok' ? 'ok' : r.status === 'untracked' ? 'muted' : r.status === 'missing' ? 'bad' : 'warn';
       return `<tr><td>${esc(r.repo)}</td><td>${esc(r.name)}</td><td>${esc(r.scope === 'env' ? `env:${r.environment}` : 'repo')}</td><td>${esc(r.updatedAt?.slice(0, 10) ?? '—')}</td><td>${r.ageDays ?? '—'}</td><td>${badge(cls, r.status)}</td></tr>`;
     })
     .join('\n');
@@ -43,11 +58,18 @@ export function renderHtmlReport(d: FleetReportData): string {
     .flatMap((r) =>
       r.error
         ? [`<tr><td>${esc(r.repo)}</td><td colspan="4">${badge('bad', 'error')} ${esc(r.error)}</td></tr>`]
-        : r.diffs.map((x) => `<tr><td>${esc(r.repo)}</td><td>${esc(x.key)}</td><td>${esc(fmt(x.desired))}</td><td>${esc(fmt(x.actual))}</td><td>${badge(x.status === 'ok' ? 'ok' : x.status === 'drift' ? 'warn' : 'muted', x.status)}</td></tr>`),
+        : r.diffs.map(
+            (x) =>
+              `<tr><td>${esc(r.repo)}</td><td>${esc(x.key)}</td><td>${esc(fmt(x.desired))}</td><td>${esc(fmt(x.actual))}</td><td>${badge(x.status === 'ok' ? 'ok' : x.status === 'drift' ? 'warn' : 'muted', x.status)}</td></tr>`,
+          ),
     )
     .join('\n');
   const unpinnedList = d.inventory.repos
-    .flatMap((r) => r.workflows.flatMap((w) => w.unpinned.map((u) => `<tr><td>${esc(r.repo)}</td><td>${esc(w.path)}</td><td><code>${esc(u)}</code></td></tr>`)))
+    .flatMap((r) =>
+      r.workflows.flatMap((w) =>
+        w.unpinned.map((u) => `<tr><td>${esc(r.repo)}</td><td>${esc(w.path)}</td><td><code>${esc(u)}</code></td></tr>`),
+      ),
+    )
     .join('\n');
 
   return `<!doctype html>

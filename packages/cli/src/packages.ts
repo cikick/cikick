@@ -39,7 +39,9 @@ export async function discoverPackages(repoDir: string): Promise<CikickPackage[]
     const meta = readJson(join(dir, 'package.json'));
     if (typeof meta.cikick !== 'string') continue;
     const mod = await importModule(join(dir, meta.cikick));
-    const exp = (mod && typeof mod === 'object' && 'migrations' in mod ? mod : mod?.default ?? mod) as CikickPackageExports;
+    const exp = (
+      mod && typeof mod === 'object' && 'migrations' in mod ? mod : (mod?.default ?? mod)
+    ) as CikickPackageExports;
     out.push({ name, version: meta.version, dir, exports: { migrations: exp.migrations ?? [], checks: exp.checks } });
   }
   return out;

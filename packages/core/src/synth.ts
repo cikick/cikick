@@ -6,7 +6,14 @@ import { isSha, type ActionRef } from './action-ref.js';
 import type { App } from './app.js';
 import { applyAspects } from './aspects.js';
 import { runChecks, type Finding, type RepoSettings } from './checks.js';
-import { LOCKFILE_NAME, emptyLockfile, readLockfile, serializeLockfile, type Lockfile, type LockedAction } from './lockfile.js';
+import {
+  LOCKFILE_NAME,
+  emptyLockfile,
+  readLockfile,
+  serializeLockfile,
+  type Lockfile,
+  type LockedAction,
+} from './lockfile.js';
 import { GENERATED_HEADER, ManagedFile, type ManagedFileMode } from './managed-file.js';
 import { LockResolver, type ActionResolver } from './resolver.js';
 import { REF_COMMENT_MARK, Workflow } from './workflow.js';
@@ -40,7 +47,9 @@ export interface SynthOptions {
 
 export class FrozenLockError extends Error {
   constructor(public readonly missing: string[]) {
-    super(`cikick.lock.json is missing entries (frozen mode): ${missing.join(', ')}. Run \`npx cikick lock\` and commit the result.`);
+    super(
+      `cikick.lock.json is missing entries (frozen mode): ${missing.join(', ')}. Run \`npx cikick lock\` and commit the result.`,
+    );
     this.name = 'FrozenLockError';
   }
 }
@@ -95,7 +104,8 @@ export async function synth(app: App, opts: SynthOptions): Promise<SynthResult> 
     files.set(f.path, f);
   };
   for (const wf of workflows) add({ path: wf.filePath, content: renderWorkflowYaml(wf), mode: 'managed' });
-  for (const mf of nodes.filter(ManagedFile.isManagedFile)) add({ path: mf.path, content: mf.render(opts.repoDir), mode: mf.mode });
+  for (const mf of nodes.filter(ManagedFile.isManagedFile))
+    add({ path: mf.path, content: mf.render(opts.repoDir), mode: mf.mode });
 
   const sorted = [...files.values()].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   const lock: Lockfile = { version: 1, actions, packages: opts.packages ?? baseLock.packages ?? {} };
@@ -114,7 +124,11 @@ export interface WriteOptions {
   writeLock?: boolean;
 }
 
-export function writeSynthResult(result: SynthResult, repoDir: string, opts: WriteOptions = {}): { written: string[]; skipped: string[] } {
+export function writeSynthResult(
+  result: SynthResult,
+  repoDir: string,
+  opts: WriteOptions = {},
+): { written: string[]; skipped: string[] } {
   const written: string[] = [];
   const skipped: string[] = [];
   const put = (rel: string, content: string) => {

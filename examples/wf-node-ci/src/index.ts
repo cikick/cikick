@@ -1,6 +1,4 @@
-import {
-  ManagedFile, secret, type Job, type StepProps, type Workflow as WorkflowT,
-} from '@cikick/core';
+import { ManagedFile, secret, type Job, type StepProps, type Workflow as WorkflowT } from '@cikick/core';
 import { Workflow } from '@cikick/core';
 import { Construct } from 'constructs';
 
@@ -45,7 +43,11 @@ export class NodeCi extends Construct {
       if (pm === 'pnpm') job.addStep({ uses: 'pnpm/action-setup@v4' });
       job.addStep({
         uses: 'actions/setup-node@v4',
-        with: { 'node-version': nodeVersion, cache: pm, ...(registry ? { 'registry-url': 'https://registry.npmjs.org' } : {}) },
+        with: {
+          'node-version': nodeVersion,
+          cache: pm,
+          ...(registry ? { 'registry-url': 'https://registry.npmjs.org' } : {}),
+        },
       });
       job.addStep({ name: 'Install', run: install });
     };
@@ -71,7 +73,12 @@ export class NodeCi extends Construct {
       job.addStep({
         name: 'Publish',
         run: pm === 'pnpm' ? 'pnpm publish --provenance --no-git-checks' : 'npm publish --provenance',
-        env: { NODE_AUTH_TOKEN: secret(this, props.release.npmTokenSecret ?? 'NPM_TOKEN', { maxAgeDays: 90, provider: 'npm' }) },
+        env: {
+          NODE_AUTH_TOKEN: secret(this, props.release.npmTokenSecret ?? 'NPM_TOKEN', {
+            maxAgeDays: 90,
+            provider: 'npm',
+          }),
+        },
       });
       this.releaseJob = job;
     }
@@ -91,7 +98,11 @@ export class NodeCi extends Construct {
           {
             matchPackageNames: ['@acme/wf-node-ci', '/^@cikick\\//'],
             groupName: 'cikick',
-            postUpgradeTasks: { commands: ['npx cikick update'], fileFilters: ['.github/**', 'cikick.lock.json', 'renovate.json', '.nvmrc'], executionMode: 'branch' },
+            postUpgradeTasks: {
+              commands: ['npx cikick update'],
+              fileFilters: ['.github/**', 'cikick.lock.json', 'renovate.json', '.nvmrc'],
+              executionMode: 'branch',
+            },
           },
         ],
       },

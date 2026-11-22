@@ -1,7 +1,10 @@
 import type { GitHubClient } from '../src/client.js';
 
 export type Handler = (params: Record<string, any>) => any;
-export interface Call { route: string; params: Record<string, any> }
+export interface Call {
+  route: string;
+  params: Record<string, any>;
+}
 
 /** Mock keyed by exact route template. Handlers may throw {status} errors. */
 export function mockClient(handlers: Record<string, Handler | any>): GitHubClient & { calls: Call[] } {
@@ -15,7 +18,13 @@ export function mockClient(handlers: Record<string, Handler | any>): GitHubClien
   return {
     calls,
     async request(route, params) {
-      return { status: 200, ...(() => { const d = run(route, params); return d && d.__status ? { status: d.__status, data: d.data } : { data: d }; })() };
+      return {
+        status: 200,
+        ...(() => {
+          const d = run(route, params);
+          return d && d.__status ? { status: d.__status, data: d.data } : { data: d };
+        })(),
+      };
     },
     async paginate(route, params) {
       return run(route, params);
@@ -24,4 +33,6 @@ export function mockClient(handlers: Record<string, Handler | any>): GitHubClien
 }
 
 export const b64 = (s: string) => Buffer.from(s).toString('base64');
-export const notFound = () => { throw Object.assign(new Error('Not Found'), { status: 404 }); };
+export const notFound = () => {
+  throw Object.assign(new Error('Not Found'), { status: 404 });
+};

@@ -70,7 +70,11 @@ export default (app) => {
     writeFileSync(join(d, '.github/workflows/node.yml'), `${GENERATED_HEADER}\non: push\n`);
     const logs: string[] = [];
     await mig.run({
-      repoDir: d, project, log: (m) => logs.push(m), writeFile() {}, deleteFile: (p) => rmSync(join(d, p), { force: true }),
+      repoDir: d,
+      project,
+      log: (m) => logs.push(m),
+      writeFile() {},
+      deleteFile: (p) => rmSync(join(d, p), { force: true }),
       readFile: (p) => (existsSync(join(d, p)) ? require_fs(join(d, p)) : undefined),
     });
     const out = sf.getFullText();
@@ -83,7 +87,14 @@ export default (app) => {
     const d = dir();
     mkdirSync(join(d, '.github/workflows'), { recursive: true });
     writeFileSync(join(d, '.github/workflows/node.yml'), 'on: push\n');
-    await mig.run({ repoDir: d, project: new Project({ useInMemoryFileSystem: true }), log() {}, writeFile() {}, deleteFile: (p) => rmSync(join(d, p), { force: true }), readFile: (p) => require_fs(join(d, p)) });
+    await mig.run({
+      repoDir: d,
+      project: new Project({ useInMemoryFileSystem: true }),
+      log() {},
+      writeFile() {},
+      deleteFile: (p) => rmSync(join(d, p), { force: true }),
+      readFile: (p) => require_fs(join(d, p)),
+    });
     expect(existsSync(join(d, '.github/workflows/node.yml'))).toBe(true);
   });
 });

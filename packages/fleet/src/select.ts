@@ -9,12 +9,18 @@ export interface AdminRepo {
 }
 
 export function globToRegExp(glob: string): RegExp {
-  const esc = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+  const esc = glob
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*/g, '.*')
+    .replace(/\?/g, '.');
   return new RegExp(`^${esc}$`, 'i');
 }
 
 /** List repos the authenticated user can administer. */
-export async function listAdminRepos(client: GitHubClient, opts: { owner?: string; filter?: string } = {}): Promise<AdminRepo[]> {
+export async function listAdminRepos(
+  client: GitHubClient,
+  opts: { owner?: string; filter?: string } = {},
+): Promise<AdminRepo[]> {
   const all = await client.paginate('GET /user/repos', { affiliation: 'owner,collaborator,organization_member' });
   let repos = all.filter((r) => r?.permissions?.admin) as AdminRepo[];
   if (opts.owner) {
@@ -41,7 +47,9 @@ export function applySelectionChange(config: FleetConfig, change: SelectChange):
     if (!isRepoName(r)) throw new Error(`Invalid repository "${r}", expected owner/repo`);
   }
   const repos = new Set(config.repos);
-  const groups: Record<string, string[]> = Object.fromEntries(Object.entries(config.groups ?? {}).map(([k, v]) => [k, [...v]]));
+  const groups: Record<string, string[]> = Object.fromEntries(
+    Object.entries(config.groups ?? {}).map(([k, v]) => [k, [...v]]),
+  );
   for (const r of change.add ?? []) {
     repos.add(r);
     if (change.group) (groups[change.group] ??= []).push(r);
@@ -64,7 +72,7 @@ export function applySelectionChange(config: FleetConfig, change: SelectChange):
 export function applyChosen(config: FleetConfig, chosen: string[], group?: string): FleetConfig {
   if (group) {
     const repos = [...new Set([...config.repos, ...chosen])].sort();
-    return { ...config, repos, groups: { ...(config.groups ?? {}), [group]: [...new Set(chosen)].sort() } };
+    return { ...config, repos, groups: { ...config.groups, [group]: [...new Set(chosen)].sort() } };
   }
   const keep = new Set(chosen);
   const groups = Object.fromEntries(
@@ -79,7 +87,11 @@ export function applyChosen(config: FleetConfig, chosen: string[], group?: strin
 }
 
 /** Non-interactive add: verifies the user has admin on each added repo before selecting it. */
-export async function selectNonInteractive(client: GitHubClient, config: FleetConfig, change: SelectChange): Promise<FleetConfig> {
+export async function selectNonInteractive(
+  client: GitHubClient,
+  config: FleetConfig,
+  change: SelectChange,
+): Promise<FleetConfig> {
   for (const r of change.add ?? []) {
     if (!isRepoName(r)) throw new Error(`Invalid repository "${r}", expected owner/repo`);
     const [owner, repo] = r.split('/');

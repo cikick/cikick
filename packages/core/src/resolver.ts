@@ -12,7 +12,10 @@ export class MissingLockEntryError extends Error {
   }
 }
 
-export type FetchLike = (url: string, init?: { headers?: Record<string, string> }) => Promise<{
+export type FetchLike = (
+  url: string,
+  init?: { headers?: Record<string, string> },
+) => Promise<{
   ok: boolean;
   status: number;
   statusText?: string;
@@ -41,10 +44,17 @@ export class GitHubResolver implements ActionResolver {
   async resolve(owner: string, repo: string, ref: string): Promise<string> {
     if (isSha(ref)) return ref;
     const url = `${this.apiUrl}/repos/${owner}/${repo}/commits/${encodeURIComponent(ref)}`;
-    const headers: Record<string, string> = { Accept: 'application/vnd.github+json', 'User-Agent': 'cikick', 'X-GitHub-Api-Version': '2022-11-28' };
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'cikick',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
     if (this.token) headers.Authorization = `Bearer ${this.token}`;
     const res = await this.fetchFn(url, { headers });
-    if (!res.ok) throw new Error(`Failed to resolve ${owner}/${repo}@${ref}: HTTP ${res.status}${res.statusText ? ' ' + res.statusText : ''}`);
+    if (!res.ok)
+      throw new Error(
+        `Failed to resolve ${owner}/${repo}@${ref}: HTTP ${res.status}${res.statusText ? ' ' + res.statusText : ''}`,
+      );
     const body = (await res.json()) as { sha?: string };
     if (!body.sha || !isSha(body.sha)) throw new Error(`Unexpected response resolving ${owner}/${repo}@${ref}`);
     return body.sha;
@@ -68,7 +78,9 @@ export type LsRemote = (url: string, refs: string[]) => Promise<string>;
 const defaultLsRemote: LsRemote = async (url, refs) => {
   const { execFile } = await import('node:child_process');
   return new Promise((resolve, reject) =>
-    execFile('git', ['ls-remote', url, ...refs], { timeout: 30_000 }, (err, stdout) => (err ? reject(err) : resolve(stdout))),
+    execFile('git', ['ls-remote', url, ...refs], { timeout: 30_000 }, (err, stdout) =>
+      err ? reject(err) : resolve(stdout),
+    ),
   );
 };
 
@@ -82,7 +94,11 @@ export class GitResolver implements ActionResolver {
   async resolve(owner: string, repo: string, ref: string): Promise<string> {
     if (isSha(ref)) return ref;
     const url = `https://${this.opts.host ?? 'github.com'}/${owner}/${repo}`;
-    const out = await (this.opts.lsRemote ?? defaultLsRemote)(url, [`refs/tags/${ref}`, `refs/tags/${ref}^{}`, `refs/heads/${ref}`]);
+    const out = await (this.opts.lsRemote ?? defaultLsRemote)(url, [
+      `refs/tags/${ref}`,
+      `refs/tags/${ref}^{}`,
+      `refs/heads/${ref}`,
+    ]);
     const map = new Map<string, string>();
     for (const line of out.split('\n')) {
       const [sha, name] = line.trim().split(/\s+/);
