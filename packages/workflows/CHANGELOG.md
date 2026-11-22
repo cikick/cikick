@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0](https://github.com/cikick/cikick/compare/workflows-v0.7.0...workflows-v0.8.0) (2026-11-22)
+
+
+### Features
+
+* **workflows:** CloudflareDeploy, extended NodeCi and ReleasePlease options ([#9](https://github.com/cikick/cikick/issues/9)) ([d8f993d](https://github.com/cikick/cikick/commit/d8f993d3cdd853f762b0095196f1a95c1577e649))
+
+
+### Bug Fixes
+
+* **workflows:** make npm publish idempotent ([#7](https://github.com/cikick/cikick/issues/7)) ([a75b05e](https://github.com/cikick/cikick/commit/a75b05eae33540ac9b841e3b405c44331d735b43))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @cikick/policies bumped to 0.7.0
+
 ## [0.7.0](https://github.com/cikick/cikick/compare/workflows-v0.6.0...workflows-v0.7.0) (2026-11-22)
 
 
