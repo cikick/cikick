@@ -1,0 +1,4 @@
+{
+  "schedule": ["before 5am on monday"],
+  "labels": ["dependencies"]
+}

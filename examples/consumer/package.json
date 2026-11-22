@@ -1,0 +1,13 @@
+{
+  "name": "cikick-example-consumer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "vitest run" },
+  "dependencies": {
+    "@acme/wf-node-ci": "workspace:*",
+    "@cikick/cli": "workspace:*",
+    "@cikick/core": "workspace:*",
+    "@cikick/policies": "workspace:*"
+  }
+}

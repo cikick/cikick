@@ -18,6 +18,33 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.5)
 
+  examples/consumer:
+    dependencies:
+      '@acme/wf-node-ci':
+        specifier: workspace:*
+        version: link:../wf-node-ci
+      '@cikick/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@cikick/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@cikick/policies':
+        specifier: workspace:*
+        version: link:../../packages/policies
+
+  examples/wf-node-ci:
+    dependencies:
+      '@cikick/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      constructs:
+        specifier: ^10.8.1
+        version: 10.8.1
+      ts-morph:
+        specifier: ^28.0.0
+        version: 28.0.0
+
   packages/cli:
     dependencies:
       '@cikick/core':
