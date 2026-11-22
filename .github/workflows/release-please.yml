@@ -4,7 +4,12 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      publish_all:
+        description: Publish every configured package that is not yet on npm (recovery after a failed publish)
+        type: boolean
+        default: false
 permissions:
   contents: write
   pull-requests: write
@@ -22,7 +27,7 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
   publish:
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: needs.release-please.outputs.releases_created == 'true' || inputs.publish_all
     needs: release-please
     runs-on: ubuntu-latest
     permissions:
@@ -45,7 +50,7 @@ jobs:
         run: pnpm run build
       - name: Publish released packages
         env:
-          PATHS_RELEASED: ${{ needs.release-please.outputs.paths_released }}
+          PATHS_RELEASED: ${{ inputs.publish_all && '["packages/core","packages/cli","packages/policies","packages/fleet","packages/workflows"]' || needs.release-please.outputs.paths_released }}
         run: |-
           set -euo pipefail
           out="$RUNNER_TEMP/packages"; mkdir -p "$out"
