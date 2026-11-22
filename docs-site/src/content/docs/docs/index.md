@@ -11,12 +11,12 @@ cikick is pre-release (0.1.0). The packages in this repository are not yet publi
 
 ## Packages
 
-| Package | What it does |
-|---|---|
-| `@cikick/core` | Constructs, synth, lockfile, aspects, checks, managed files, secret declarations, migrations API |
-| `@cikick/cli` | The `cikick` binary: `synth`, `check`, `lock`, `update`, `migrate`, `secrets`, `init` |
-| `@cikick/policies` | Stock aspects and checks, plus `applyBaseline(app)` |
-| `@cikick/fleet` | The `cikick-fleet` binary: `select`, `inventory`, `settings`, `secrets`, `report` over repos you select |
+| Package            | What it does                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| `@cikick/core`     | Constructs, synth, lockfile, aspects, checks, managed files, secret declarations, migrations API        |
+| `@cikick/cli`      | The `cikick` binary: `synth`, `check`, `lock`, `update`, `migrate`, `secrets`, `init`                   |
+| `@cikick/policies` | Stock aspects and checks, plus `applyBaseline(app)`                                                     |
+| `@cikick/fleet`    | The `cikick-fleet` binary: `select`, `inventory`, `settings`, `secrets`, `report` over repos you select |
 
 ## Where to go
 

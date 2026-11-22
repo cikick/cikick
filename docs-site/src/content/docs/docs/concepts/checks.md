@@ -13,16 +13,16 @@ type Severity = 'info' | 'warn' | 'error';
 interface Check {
   id: string;
   severity: Severity;
-  enforceAfter?: string;            // ISO date
+  enforceAfter?: string; // ISO date
   run(ctx: CheckContext): Finding[] | Promise<Finding[]>;
 }
 
 interface CheckContext {
-  app: App;                         // the construct tree
+  app: App; // the construct tree
   repoDir: string;
-  readFile(path: string): string | undefined;  // relative to repoDir; undefined if absent
+  readFile(path: string): string | undefined; // relative to repoDir; undefined if absent
   settings?: RepoSettings;
-  files?: SynthFile[];              // files produced by this synth
+  files?: SynthFile[]; // files produced by this synth
 }
 
 interface Finding {
@@ -65,8 +65,14 @@ export const nvmrcCheck: Check = {
     if (c === undefined) return [];
     const major = parseInt(c.trim().replace(/^v/, ''), 10);
     if (Number.isNaN(major) || major >= 20) return [];
-    return [{ checkId: '@acme/wf-node-ci:nvmrc-min-node', severity: 'warn', path: '.nvmrc',
-      message: `Node ${major} is end-of-life; set nodeVersion >= 20 in NodeCi` }];
+    return [
+      {
+        checkId: '@acme/wf-node-ci:nvmrc-min-node',
+        severity: 'warn',
+        path: '.nvmrc',
+        message: `Node ${major} is end-of-life; set nodeVersion >= 20 in NodeCi`,
+      },
+    ];
   },
 };
 
@@ -77,13 +83,13 @@ Before 2027-03-01 a repo with `.nvmrc` below 20 sees `WARN  [@acme/wf-node-ci:nv
 
 ## Stock checks in `@cikick/policies`
 
-| Id | Severity | What it flags |
-|---|---|---|
-| `require-pinned-actions` | error | A job or step `uses` that is not resolved to a commit SHA after synth, a `docker://` image without an `@sha256:` digest, or a malformed reference. Remote refs are pinned by synth itself, so in practice this catches un-digested Docker images. |
-| `require-explicit-permissions` | error | A job with no `permissions` when the workflow declares none either. |
-| `no-pull-request-target-checkout` | error | A `pull_request_target` workflow whose `actions/checkout` step's `ref`/`repository` points at PR head code (matches `head`, `github.event.pull_request`, `github.head_ref`, `refs/pull/`). |
-| `no-script-injection` | warn | An attacker-controllable expression (issue/PR title or body, branch names, commit messages, and similar) interpolated directly into a `run:` script. The message suggests passing it through `env`. |
-| `require-timeout` | warn | A job without `timeout-minutes` (reusable-workflow calls excluded). |
+| Id                                | Severity | What it flags                                                                                                                                                                                                                                     |
+| --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `require-pinned-actions`          | error    | A job or step `uses` that is not resolved to a commit SHA after synth, a `docker://` image without an `@sha256:` digest, or a malformed reference. Remote refs are pinned by synth itself, so in practice this catches un-digested Docker images. |
+| `require-explicit-permissions`    | error    | A job with no `permissions` when the workflow declares none either.                                                                                                                                                                               |
+| `no-pull-request-target-checkout` | error    | A `pull_request_target` workflow whose `actions/checkout` step's `ref`/`repository` points at PR head code (matches `head`, `github.event.pull_request`, `github.head_ref`, `refs/pull/`).                                                        |
+| `no-script-injection`             | warn     | An attacker-controllable expression (issue/PR title or body, branch names, commit messages, and similar) interpolated directly into a `run:` script. The message suggests passing it through `env`.                                               |
+| `require-timeout`                 | warn     | A job without `timeout-minutes` (reusable-workflow calls excluded).                                                                                                                                                                               |
 
 Check factories:
 
@@ -91,9 +97,7 @@ Check factories:
 import { deprecatedAction, fileContains } from '@cikick/policies';
 
 // id: deprecated-action:actions/upload-artifact, severity warn unless overridden
-Checks.of(app).add(
-  deprecatedAction({ action: 'actions/upload-artifact', below: 'v4', enforceAfter: '2027-01-31' }),
-);
+Checks.of(app).add(deprecatedAction({ action: 'actions/upload-artifact', below: 'v4', enforceAfter: '2027-01-31' }));
 
 // id: file-contains:.nvmrc unless `id` is given
 Checks.of(app).add(

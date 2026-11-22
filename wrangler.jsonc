@@ -7,12 +7,12 @@
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./docs-site/dist",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
   },
   // Runs before `wrangler deploy` locally / in generic CI. NOTE: Cloudflare Workers Builds does NOT
   // honour this block, so also set the dashboard Build command to the same string (see docs-site/README.md).
   // docs-site/astro.config.mjs uses base "/" automatically when WRANGLER_COMMAND or WORKERS_CI is set.
   "build": {
-    "command": "cd docs-site && npm ci && npm run build"
-  }
+    "command": "pnpm install --frozen-lockfile && pnpm --filter cikick-docs-site build",
+  },
 }

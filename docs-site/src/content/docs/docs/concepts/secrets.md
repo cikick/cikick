@@ -25,13 +25,13 @@ job.addStep({
 - Registers a `SecretDecl` construct on the **app root** (found via `scope.node.root`), so it does not matter which construct you pass as `scope`.
 - `opts` is `{ scope?, environment?, maxAgeDays?, provider?, description? }`:
 
-| Option | Meaning |
-|---|---|
-| `scope` | `'repo'` (default), `'env'` or `'org'`. |
-| `environment` | Environment name for `'env'` secrets. |
-| `maxAgeDays` | Intended maximum age before rotation. |
-| `provider` | Free text: who issues the credential (`npm`, `aws`, ...). |
-| `description` | Free text. |
+| Option        | Meaning                                                   |
+| ------------- | --------------------------------------------------------- |
+| `scope`       | `'repo'` (default), `'env'` or `'org'`.                   |
+| `environment` | Environment name for `'env'` secrets.                     |
+| `maxAgeDays`  | Intended maximum age before rotation.                     |
+| `provider`    | Free text: who issues the credential (`npm`, `aws`, ...). |
+| `description` | Free text.                                                |
 
 Core does not validate combinations: `scope: 'env'` without `environment` is accepted.
 

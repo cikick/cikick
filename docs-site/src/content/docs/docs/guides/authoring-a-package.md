@@ -87,7 +87,7 @@ export class NodeCi extends Construct {
 
 Key points from the real implementation:
 
-- The workflow is created *inside* the construct: `new Workflow(this, 'ci', { ... })`. The file name comes from the workflow's own id (`ci` gives `.github/workflows/ci.yml`), not from the id the consumer passes to `NodeCi`.
+- The workflow is created _inside_ the construct: `new Workflow(this, 'ci', { ... })`. The file name comes from the workflow's own id (`ci` gives `.github/workflows/ci.yml`), not from the id the consumer passes to `NodeCi`.
 - Steps use ordinary action refs such as `actions/checkout@v4`; cikick pins them in the consumer's lockfile.
 - Every job is added with `workflow.addJob(id, props)` and steps with `job.addStep({...})`.
 
@@ -99,7 +99,7 @@ this.workflow = new Workflow(this, 'ci', {
 });
 
 this.buildJob = this.workflow.addJob('build', { runsOn: 'ubuntu-latest' });
-setup(this.buildJob);   // checkout, (pnpm/action-setup), setup-node, install
+setup(this.buildJob); // checkout, (pnpm/action-setup), setup-node, install
 // ... lint + build steps
 
 this.testJob = this.workflow.addJob('test', { runsOn: 'ubuntu-latest', needs: this.buildJob });
@@ -113,9 +113,9 @@ for (const s of props.extraSteps ?? []) this.testJob.addStep(s);
 Consumers will always need something the props do not cover. Expose the pieces they are likely to touch as public `readonly` members: `workflow`, `buildJob`, `testJob`, `releaseJob`. With those a consumer can:
 
 ```ts
-ci.testJob.addStep({ name: 'E2E', run: 'pnpm e2e' });          // add a step
-ci.testJob.addOverride('runs-on', 'ubuntu-24.04');              // set any YAML path
-ci.buildJob.props.runsOn = ['self-hosted', 'linux'];            // mutate typed props
+ci.testJob.addStep({ name: 'E2E', run: 'pnpm e2e' }); // add a step
+ci.testJob.addOverride('runs-on', 'ubuntu-24.04'); // set any YAML path
+ci.buildJob.props.runsOn = ['self-hosted', 'linux']; // mutate typed props
 ci.workflow.addOverride('concurrency.cancel-in-progress', false);
 ```
 
@@ -140,7 +140,11 @@ new ManagedFile(this, 'renovate', {
       {
         matchPackageNames: ['@acme/wf-node-ci', '/^@cikick\\//'],
         groupName: 'cikick',
-        postUpgradeTasks: { commands: ['npx cikick update'], fileFilters: ['.github/**', 'cikick.lock.json', 'renovate.json', '.nvmrc'], executionMode: 'branch' },
+        postUpgradeTasks: {
+          commands: ['npx cikick update'],
+          fileFilters: ['.github/**', 'cikick.lock.json', 'renovate.json', '.nvmrc'],
+          executionMode: 'branch',
+        },
       },
     ],
   },
@@ -156,7 +160,7 @@ The three modes:
 `format` is inferred from the extension when omitted. Only YAML output (other than `seeded`) gets the generated header; JSON and text files do not.
 
 :::caution
-In `merged` mode arrays are *replaced*, not concatenated. A consumer patch that sets `packageRules` replaces the package's whole `packageRules`, including the `postUpgradeTasks` rule. Document this to consumers, and tell them to edit `renovate.patch.json`, never `renovate.json`.
+In `merged` mode arrays are _replaced_, not concatenated. A consumer patch that sets `packageRules` replaces the package's whole `packageRules`, including the `postUpgradeTasks` rule. Document this to consumers, and tell them to edit `renovate.patch.json`, never `renovate.json`.
 :::
 
 ## 4. Declare secrets
@@ -167,7 +171,9 @@ Use `secret(scope, name, opts)` wherever a workflow needs a secret. It returns t
 job.addStep({
   name: 'Publish',
   run: pm === 'pnpm' ? 'pnpm publish --provenance --no-git-checks' : 'npm publish --provenance',
-  env: { NODE_AUTH_TOKEN: secret(this, props.release.npmTokenSecret ?? 'NPM_TOKEN', { maxAgeDays: 90, provider: 'npm' }) },
+  env: {
+    NODE_AUTH_TOKEN: secret(this, props.release.npmTokenSecret ?? 'NPM_TOKEN', { maxAgeDays: 90, provider: 'npm' }),
+  },
 });
 ```
 
@@ -178,14 +184,14 @@ Options: `scope` (`'repo'` default, `'env'`, `'org'`), `environment` (for `env`)
 ```ts title="src/cikick.ts"
 import { GENERATED_HEADER, type Check, type CikickPackageExports, type Migration } from '@cikick/core';
 
-export const migrations: Migration[] = [ /* section 6 */ ];
-export const checks: Check[] = [ /* section 7 */ ];
+export const migrations: Migration[] = [/* section 6 */];
+export const checks: Check[] = [/* section 7 */];
 
 const exported: CikickPackageExports = { migrations, checks };
 export default exported;
 ```
 
-The CLI accepts either named exports or a default export with `migrations` (required, may be empty) and `checks` (optional). Checks from every discovered package are registered on the app *before* the consumer's config runs, so they apply to every `synth` and `check`.
+The CLI accepts either named exports or a default export with `migrations` (required, may be empty) and `checks` (optional). Checks from every discovered package are registered on the app _before_ the consumer's config runs, so they apply to every `synth` and `check`.
 
 ## 6. Write a migration, end to end
 
@@ -206,10 +212,10 @@ interface Migration {
 
 interface MigrationContext {
   repoDir: string;
-  readFile(path: string): string | undefined;   // repo-relative; undefined if absent
+  readFile(path: string): string | undefined; // repo-relative; undefined if absent
   writeFile(path: string, content: string): void;
-  deleteFile(path: string): void;               // no-op if absent
-  project: Project;                             // ts-morph project containing the config file
+  deleteFile(path: string): void; // no-op if absent
+  project: Project; // ts-morph project containing the config file
   log(msg: string): void;
 }
 ```
@@ -252,7 +258,8 @@ Its limits are worth knowing, and worth stating in your CHANGELOG: it only match
 export const migrations: Migration[] = [
   {
     version: '2.0.0',
-    description: 'Rename NodeCi prop `node` to `nodeVersion`; remove legacy cikick-generated .github/workflows/node.yml',
+    description:
+      'Rename NodeCi prop `node` to `nodeVersion`; remove legacy cikick-generated .github/workflows/node.yml',
     async run(ctx) {
       const n = renameNodeProp(ctx.project);
       if (n) {
@@ -313,7 +320,14 @@ export const nvmrcCheck: Check = {
     if (c === undefined) return [];
     const major = parseInt(c.trim().replace(/^v/, ''), 10);
     if (Number.isNaN(major) || major >= 20) return [];
-    return [{ checkId: '@acme/wf-node-ci:nvmrc-min-node', severity: 'warn', path: '.nvmrc', message: `Node ${major} is end-of-life; set nodeVersion >= 20 in NodeCi` }];
+    return [
+      {
+        checkId: '@acme/wf-node-ci:nvmrc-min-node',
+        severity: 'warn',
+        path: '.nvmrc',
+        message: `Node ${major} is end-of-life; set nodeVersion >= 20 in NodeCi`,
+      },
+    ];
   },
 };
 
@@ -359,16 +373,26 @@ it('synths ci workflow, nvmrc, renovate', async () => {
 
 ```ts
 const project = new Project({ useInMemoryFileSystem: true });
-const sf = project.createSourceFile('cikick.config.ts', `
+const sf = project.createSourceFile(
+  'cikick.config.ts',
+  `
   import { NodeCi } from '@acme/wf-node-ci';
   const node = 20;
   export default (app) => {
     new NodeCi(app, 'ci', { node: 18, test: 'x' });
     new NodeCi(app, 'ci2', { node });
     new Other(app, 'o', { node: 1 });
-  };`);
-await mig.run({ repoDir: d, project, log: (m) => logs.push(m), writeFile() {}, deleteFile: (p) => rmSync(join(d, p), { force: true }), readFile: (p) => existsSync(join(d, p)) ? readFileSync(join(d, p), 'utf8') : undefined });
-expect(sf.getFullText()).toContain('{ nodeVersion: node }');           // shorthand handled
+  };`,
+);
+await mig.run({
+  repoDir: d,
+  project,
+  log: (m) => logs.push(m),
+  writeFile() {},
+  deleteFile: (p) => rmSync(join(d, p), { force: true }),
+  readFile: (p) => (existsSync(join(d, p)) ? readFileSync(join(d, p), 'utf8') : undefined),
+});
+expect(sf.getFullText()).toContain('{ nodeVersion: node }'); // shorthand handled
 expect(sf.getFullText()).toContain("new Other(app, 'o', { node: 1 })"); // other constructs untouched
 ```
 
@@ -394,17 +418,22 @@ Keep a `CHANGELOG.md` in the package (and in `files`). The example uses one sect
 ## 2.0.0
 
 ### Breaking
+
 - `NodeCi` prop `node` was renamed to `nodeVersion` (default `22`).
 
 ### Migration
+
 `npx cikick update` runs the `2.0.0` migration automatically. It:
+
 1. Finds every `new NodeCi(scope, id, { node: ... })` in `cikick.config.ts` and renames the property ...
 2. Deletes the legacy `.github/workflows/node.yml` **only** if it starts with the cikick generated-file header ...
 
 ### Checks
+
 - `.nvmrc` below Node 20 warns; it becomes an error after 2027-03-01. Bump `nodeVersion` to fix.
 
 ### Other
+
 - New `release` option ...
 ```
 

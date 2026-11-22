@@ -2,7 +2,7 @@
 
 Built with `npm run build`, served with `astro preview`, and screenshotted at 1280 and 390 px, light and dark, with reduced motion on and off. Every claim was checked against `packages/*/src`.
 
-**30-second test:** I can say what it is ("CDK for GitHub Actions: TS → pinned YAML, shared as npm packages"). I **can't** say why I'd need it over Renovate plus reusable workflows, because the hero sells SHA pinning, which I already get from Renovate. I also can't say what my next step is: "Try it in 3 commands" clones *your* monorepo, so nothing happens in *my* repo. The real differentiator (one breaking change becomes N migration PRs) only appears in the 3rd section.
+**30-second test:** I can say what it is ("CDK for GitHub Actions: TS → pinned YAML, shared as npm packages"). I **can't** say why I'd need it over Renovate plus reusable workflows, because the hero sells SHA pinning, which I already get from Renovate. I also can't say what my next step is: "Try it in 3 commands" clones _your_ monorepo, so nothing happens in _my_ repo. The real differentiator (one breaking change becomes N migration PRs) only appears in the 3rd section.
 
 ## Findings
 
@@ -23,18 +23,18 @@ Built with `npm run build`, served with `astro preview`, and screenshotted at 12
 
 3. **Problem card "keeping the pins current" + Pipeline: nothing shows how pins get refreshed.**
    - **Problem:** the lockfile maps `ref → sha`. Re-resolution only happens on `cikick lock --refresh` or `synth --refresh`. Nothing automatic is shown or implemented.
-   - **Worse, an actual product conflict:** the `NodeCi` managed `renovate.json` extends `helpers:pinGitHubActionDigests`. Renovate will bump digests directly in *generated* `ci.yml`. Then `cikick check` fails on drift, or `postUpgradeTasks: cikick update` re-synths from the lock and reverts the bump.
+   - **Worse, an actual product conflict:** the `NodeCi` managed `renovate.json` extends `helpers:pinGitHubActionDigests`. Renovate will bump digests directly in _generated_ `ci.yml`. Then `cikick check` fails on drift, or `postUpgradeTasks: cikick update` re-synths from the lock and reverts the bump.
    - **Fix:** either say plainly "refresh pins with `cikick lock --refresh` (e.g. a scheduled workflow)", or build a Renovate custom manager for `cikick.lock.json`. Until then, drop "keeping the pins current" as a claim. Also fix or explain the digest-helper conflict in `examples/wf-node-ci/src/index.ts`.
 
 4. **Fleet + Problem card 2: "secret rotation" is overclaimed.**
-   - **Problem:** `secrets rotate` *distributes* a value you already minted to N repos (sealed-box PUT). It doesn't mint the new token, revoke the old one, or talk to npm. `SecretDecl.provider` is metadata only. A security-minded reader will call this out.
-   - **Fix:** retitle the card to "A new secret value reached 2 of 9 repos". In Fleet, add: *"cikick-fleet pushes a value you provide to every selected repo/env and reports age. Minting and revoking at the provider is still yours."*
+   - **Problem:** `secrets rotate` _distributes_ a value you already minted to N repos (sealed-box PUT). It doesn't mint the new token, revoke the old one, or talk to npm. `SecretDecl.provider` is metadata only. A security-minded reader will call this out.
+   - **Fix:** retitle the card to "A new secret value reached 2 of 9 repos". In Fleet, add: _"cikick-fleet pushes a value you provide to every selected repo/env and reports age. Minting and revoking at the provider is still yours."_
    - **Also missing:** "why not org-level secrets scoped to selected repos?" That is the first question the persona will ask. Answer it: env-scoped secrets, per-repo values, and repos outside one org are the honest cases.
 
 ### P1
 
 5. **Why not…: replace the six cards with the table below. Fix the overstated and missing comparisons.**
-   - **Reusable workflows:** "The caller gets inputs and nothing else" is too strong. The calling job can also set `secrets` (incl. `inherit`), `permissions`, `strategy`/matrix, `concurrency`, `if` and `needs`. Suggested copy: *"Callers can pass inputs, secrets and job-level settings, but can't add or change a step inside the called jobs."*
+   - **Reusable workflows:** "The caller gets inputs and nothing else" is too strong. The calling job can also set `secrets` (incl. `inherit`), `permissions`, `strategy`/matrix, `concurrency`, `if` and `needs`. Suggested copy: _"Callers can pass inputs, secrets and job-level settings, but can't add or change a step inside the called jobs."_
    - **"Each caller still pins its own @ref and still needs a bump PR":** true, but many orgs use `@main` deliberately to avoid that. Say why that is worse (unreviewed changes go live in every repo at once, which is the tj-actions failure mode in-house).
    - **Missing alternatives the persona actually uses:**
      - Org **rulesets with required workflows**: central enforcement, no per-repo PR.
@@ -43,6 +43,7 @@ Built with `npm run build`, served with `astro preview`, and screenshotted at 12
      - **Org-level secrets.**
 
      These are cikick's real competitors for this persona, more than github-workflows-kt.
+
    - **Keep the two "good fit / wrong call" cards.** They are the most credible thing on the page. Move them directly under the table.
 
 6. **Update loop: the diff contradicts its caption.**
@@ -51,10 +52,10 @@ Built with `npm run build`, served with `astro preview`, and screenshotted at 12
      - Who merges 80 PRs?
    - **Fix:**
      - Add a `ci.yml` hunk to the diff.
-     - Add one line under the step list: *"If a codemod can't apply, `cikick update` fails the PR with the reason. Renovate automerge works once `cikick check` is green."*
+     - Add one line under the step list: _"If a codemod can't apply, `cikick update` fails the PR with the reason. Renovate automerge works once `cikick check` is green."_
      - **Check the first sentence against `update.ts` before publishing it.** The code wasn't checked for this failure path.
 
-7. **Pipeline lede: one sentence contradicts the page.** "Nothing cikick-specific executes in your CI" conflicts with the recommended `cikick check` CI step. Replace with *"The generated YAML runs without cikick. `cikick check` is an optional CI gate."*
+7. **Pipeline lede: one sentence contradicts the page.** "Nothing cikick-specific executes in your CI" conflicts with the recommended `cikick check` CI step. Replace with _"The generated YAML runs without cikick. `cikick check` is an optional CI gate."_
 
 8. **Problem: the section's visual weight goes to the wrong things.**
    - The tag-hijack card is the largest card, and it covers the problem Renovate and zizmor already solve.
@@ -92,22 +93,23 @@ Built with `npm run build`, served with `astro preview`, and screenshotted at 12
 
 Legend: ✓ yes · ◐ partial · ✗ no · ? unverified.
 
-| | Shared across repos | Per-repo customisation | Breaking-change migrations | SHA pinning | Lockfile | Secret distribution / fleet ops | Static analysis | No build step | Maturity |
-|---|---|---|---|---|---|---|---|---|---|
-| **cikick** | ✓ npm packages | ✓ props, `addOverride`, aspects | ✓ versioned codemods via `cikick update` | ✓ at synth (refresh is manual: `lock --refresh`) | ✓ `cikick.lock.json` | ◐ age report + push a value to selected repos; no mint/revoke | ◐ 5 stock checks + custom `Check`s | ✗ synth step | ✗ 0.1, unpublished |
-| **Reusable workflows** | ✓ native | ◐ inputs, secrets, job-level settings; not steps | ✗ | ◐ caller pins `@sha` by hand | ✗ | ✗ | ✗ | ✓ | ✓ GA |
-| **Composite actions** | ◐ steps only | ◐ inputs only | ✗ | ◐ by hand | ✗ | ✗ | ✗ | ✓ | ✓ GA |
-| **Org rulesets / required workflows** | ✓ enforced centrally | ✗ same workflow everywhere | ✗ | ◐ by hand in the one file | ✗ | ✗ | ✗ | ✓ | ✓ (plan availability: unverified) |
-| **Org-level secrets** | ✓ | ◐ select repos; one value | n/a | n/a | n/a | ◐ one value, many repos; no age policy | n/a | ✓ | ✓ |
-| **Renovate / Dependabot** | ✗ per-repo copies | n/a | ✗ bumps strings | ✓ Renovate digest pinning; Dependabot bumps SHAs (pinning on its own: unverified) | ✗ | ✗ | ✗ | ✓ | ✓ |
-| **File sync / multi-repo PR tools** | ◐ copy files out | ◐ via templating (unverified) | ◐ scripted, not versioned | ✗ | ✗ | ✗ | ✗ | ✓ | ◐ varies |
-| **projen** | ✓ npm packages | ✓ escape hatches | ◐ re-synth; breaks surface as compile errors, no shipped codemods (unverified) | ? unverified | ? unverified | ✗ | ✗ | ✗ synth step | ✓ widely used |
-| **github-workflows-kt** | ◐ Kotlin scripts/libs | ✓ code | ✗ (unverified) | ? unverified | ✗ (unverified) | ✗ | ✓ typed action inputs | ✗ script step | ◐ active, niche |
-| **zizmor / actionlint** | n/a (analysis only) | n/a | ✗ | ◐ flags unpinned uses (zizmor) | ✗ | ✗ | ✓ deeper than cikick | ✓ | ✓ |
+|                                       | Shared across repos   | Per-repo customisation                           | Breaking-change migrations                                                     | SHA pinning                                                                       | Lockfile             | Secret distribution / fleet ops                               | Static analysis                    | No build step | Maturity                          |
+| ------------------------------------- | --------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------- | ---------------------------------- | ------------- | --------------------------------- |
+| **cikick**                            | ✓ npm packages        | ✓ props, `addOverride`, aspects                  | ✓ versioned codemods via `cikick update`                                       | ✓ at synth (refresh is manual: `lock --refresh`)                                  | ✓ `cikick.lock.json` | ◐ age report + push a value to selected repos; no mint/revoke | ◐ 5 stock checks + custom `Check`s | ✗ synth step  | ✗ 0.1, unpublished                |
+| **Reusable workflows**                | ✓ native              | ◐ inputs, secrets, job-level settings; not steps | ✗                                                                              | ◐ caller pins `@sha` by hand                                                      | ✗                    | ✗                                                             | ✗                                  | ✓             | ✓ GA                              |
+| **Composite actions**                 | ◐ steps only          | ◐ inputs only                                    | ✗                                                                              | ◐ by hand                                                                         | ✗                    | ✗                                                             | ✗                                  | ✓             | ✓ GA                              |
+| **Org rulesets / required workflows** | ✓ enforced centrally  | ✗ same workflow everywhere                       | ✗                                                                              | ◐ by hand in the one file                                                         | ✗                    | ✗                                                             | ✗                                  | ✓             | ✓ (plan availability: unverified) |
+| **Org-level secrets**                 | ✓                     | ◐ select repos; one value                        | n/a                                                                            | n/a                                                                               | n/a                  | ◐ one value, many repos; no age policy                        | n/a                                | ✓             | ✓                                 |
+| **Renovate / Dependabot**             | ✗ per-repo copies     | n/a                                              | ✗ bumps strings                                                                | ✓ Renovate digest pinning; Dependabot bumps SHAs (pinning on its own: unverified) | ✗                    | ✗                                                             | ✗                                  | ✓             | ✓                                 |
+| **File sync / multi-repo PR tools**   | ◐ copy files out      | ◐ via templating (unverified)                    | ◐ scripted, not versioned                                                      | ✗                                                                                 | ✗                    | ✗                                                             | ✗                                  | ✓             | ◐ varies                          |
+| **projen**                            | ✓ npm packages        | ✓ escape hatches                                 | ◐ re-synth; breaks surface as compile errors, no shipped codemods (unverified) | ? unverified                                                                      | ? unverified         | ✗                                                             | ✗                                  | ✗ synth step  | ✓ widely used                     |
+| **github-workflows-kt**               | ◐ Kotlin scripts/libs | ✓ code                                           | ✗ (unverified)                                                                 | ? unverified                                                                      | ✗ (unverified)       | ✗                                                             | ✓ typed action inputs              | ✗ script step | ◐ active, niche                   |
+| **zizmor / actionlint**               | n/a (analysis only)   | n/a                                              | ✗                                                                              | ◐ flags unpinned uses (zizmor)                                                    | ✗                    | ✗                                                             | ✓ deeper than cikick               | ✓             | ✓                                 |
 
-**Footnote under the table:** *"Third-party cells reflect our reading of their docs as of Nov 2026; cells marked ? or 'unverified' are ones we have not confirmed. Corrections welcome (link to an issue)."* This is what turns "Honest comparisons" from a claim into a demonstrated behaviour.
+**Footnote under the table:** _"Third-party cells reflect our reading of their docs as of Nov 2026; cells marked ? or 'unverified' are ones we have not confirmed. Corrections welcome (link to an issue)."_ This is what turns "Honest comparisons" from a claim into a demonstrated behaviour.
 
 **Source checks for the cikick row:**
+
 - **Lockfile:** `core/lockfile.ts`, `core/resolver.ts` (git ls-remote).
 - **Migrations:** `cli/update.ts`.
 - **Checks:** `policies/checks.ts` has 5 checks in the baseline, plus the deprecation check.

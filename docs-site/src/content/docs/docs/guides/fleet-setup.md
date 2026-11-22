@@ -28,14 +28,14 @@ Run the tool from that directory with `npx cikick-fleet ...`. By default it read
 
 The scopes below are **derived from the GitHub API routes the code calls**, not from official cikick documentation. Verify them against GitHub's documentation for each route before granting.
 
-| Command | Routes used | Needs |
-|---|---|---|
-| `select` | `GET /user/repos`, `GET /repos/{o}/{r}` | read access to repository metadata; admin on the repos you choose |
-| `inventory`, `report` | `GET /repos/{o}/{r}/contents/{path}` (`cikick.lock.json`, `.github/workflows`) | contents read |
-| `secrets report` | `GET /repos/{o}/{r}/actions/secrets`, `GET /repos/{o}/{r}/environments`, `GET .../environments/{env}/secrets` | actions secrets read, environments read |
-| `secrets rotate` | `GET`+`PUT /repos/{o}/{r}/actions/secrets/...` and `.../environments/{env}/secrets/...` (public key, then PUT) | actions secrets read and write, environments read |
+| Command                   | Routes used                                                                                                                                  | Needs                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `select`                  | `GET /user/repos`, `GET /repos/{o}/{r}`                                                                                                      | read access to repository metadata; admin on the repos you choose                                    |
+| `inventory`, `report`     | `GET /repos/{o}/{r}/contents/{path}` (`cikick.lock.json`, `.github/workflows`)                                                               | contents read                                                                                        |
+| `secrets report`          | `GET /repos/{o}/{r}/actions/secrets`, `GET /repos/{o}/{r}/environments`, `GET .../environments/{env}/secrets`                                | actions secrets read, environments read                                                              |
+| `secrets rotate`          | `GET`+`PUT /repos/{o}/{r}/actions/secrets/...` and `.../environments/{env}/secrets/...` (public key, then PUT)                               | actions secrets read and write, environments read                                                    |
 | `settings diff`, `report` | `GET .../actions/permissions`, `.../permissions/workflow`, `.../permissions/selected-actions`, `.../rulesets`, `.../branches/{b}/protection` | actions/administration read (for the Actions permission routes), rulesets and branch protection read |
-| `settings apply --yes` | `PUT .../actions/permissions`, `.../permissions/workflow`, `.../permissions/selected-actions` | actions/administration write |
+| `settings apply --yes`    | `PUT .../actions/permissions`, `.../permissions/workflow`, `.../permissions/selected-actions`                                                | actions/administration write                                                                         |
 
 With a classic token, the `repo` scope is the simplest superset of the above. With a fine-grained token, grant the matching repository permissions on exactly the repositories you plan to select. A `403` from the branch protection route is tolerated (treated as "not protected"); other errors are reported per repository as `error <repo>: <message>` (secrets) or `error: <message>` (inventory, settings) and the run continues with the next repository.
 
@@ -79,12 +79,7 @@ Every selected repository must be of the form `owner/repo`.
 
 ```json title="fleet.json"
 {
-  "repos": [
-    "acme/svc-api",
-    "acme/svc-web",
-    "acme/svc-worker",
-    "acme/tools"
-  ],
+  "repos": ["acme/svc-api", "acme/svc-web", "acme/svc-worker", "acme/tools"],
   "groups": {
     "prod-deployers": ["acme/svc-api", "acme/svc-web", "acme/svc-worker"]
   },
@@ -219,13 +214,13 @@ untracked-stale acme/tools  OLD_TOKEN  400d (max 180)
 
 For each selected repository the fleet lists repository secrets and the secrets of each environment, then compares them with `secretPolicies` that cover that repository:
 
-| Status | Meaning |
-|---|---|
-| `ok` | a policy matches and the secret's age is within `maxAgeDays` |
-| `stale` | a policy matches and `updated_at` is older than `maxAgeDays` |
-| `missing` | a policy covers the repository but no such secret (or environment) exists |
-| `untracked` | a secret exists that no policy covers; younger than the default maximum |
-| `untracked-stale` | an uncovered secret older than the default maximum |
+| Status            | Meaning                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| `ok`              | a policy matches and the secret's age is within `maxAgeDays`              |
+| `stale`           | a policy matches and `updated_at` is older than `maxAgeDays`              |
+| `missing`         | a policy covers the repository but no such secret (or environment) exists |
+| `untracked`       | a secret exists that no policy covers; younger than the default maximum   |
+| `untracked-stale` | an uncovered secret older than the default maximum                        |
 
 The default maximum for uncovered secrets is 180 days; override with `--max-age <days>`. The exit code is `1` when any row is `stale`, `missing` or `untracked-stale` (plain `untracked` does not count), so it can gate a scheduled job. `--json` prints the report.
 

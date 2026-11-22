@@ -13,7 +13,11 @@ const base = process.env.DOCS_BASE ?? (onCloudflare ? '/' : '/cikick');
 const prefix = base.replace(/\/$/, '');
 function remarkRebaseLinks() {
   const walk = (node) => {
-    if ((node.type === 'link' || node.type === 'definition') && typeof node.url === 'string' && node.url.startsWith('/cikick/')) {
+    if (
+      (node.type === 'link' || node.type === 'definition') &&
+      typeof node.url === 'string' &&
+      node.url.startsWith('/cikick/')
+    ) {
       node.url = prefix + node.url.slice('/cikick'.length);
     }
     node.children?.forEach(walk);
@@ -28,7 +32,8 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'cikick',
-      description: 'CDK for GitHub Actions: TypeScript constructs, synthesized to pinned YAML, with migrations and a fleet control plane.',
+      description:
+        'CDK for GitHub Actions: TypeScript constructs, synthesized to pinned YAML, with migrations and a fleet control plane.',
       logo: { src: './src/assets/logo.svg', alt: 'cikick' },
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/cikick/cikick' }],

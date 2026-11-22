@@ -11,15 +11,15 @@ cikick <command> [options]
 
 ## Commands
 
-| Command | Purpose | Writes | Fails (exit 1) when |
-| --- | --- | --- | --- |
-| `synth` | Synthesize workflows, managed files and the lockfile | Generated files, `cikick.lock.json` | Any finding has severity `error`; frozen lock is missing entries; config or resolver error |
-| `check` | Verify generated files are up to date (frozen) | Nothing | Drift detected, any `error` finding, or lock is missing entries |
-| `lock` | Resolve action refs and update the lockfile only | `cikick.lock.json` | Any `error` finding; resolver error |
-| `update` | Run package migrations, then synth | Config (via migrations), generated files, lockfile | Synth has `error` findings; a migration throws |
-| `migrate <pkg>` | Run one package's migrations explicitly | Whatever the migrations write | Package not installed; invalid semver; a migration throws |
-| `secrets` | Print the declared secrets manifest | Nothing | Config cannot be loaded |
-| `init` | Write a starter `cikick.config.ts` | `cikick.config.ts` | Directory is not writable |
+| Command         | Purpose                                              | Writes                                             | Fails (exit 1) when                                                                        |
+| --------------- | ---------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `synth`         | Synthesize workflows, managed files and the lockfile | Generated files, `cikick.lock.json`                | Any finding has severity `error`; frozen lock is missing entries; config or resolver error |
+| `check`         | Verify generated files are up to date (frozen)       | Nothing                                            | Drift detected, any `error` finding, or lock is missing entries                            |
+| `lock`          | Resolve action refs and update the lockfile only     | `cikick.lock.json`                                 | Any `error` finding; resolver error                                                        |
+| `update`        | Run package migrations, then synth                   | Config (via migrations), generated files, lockfile | Synth has `error` findings; a migration throws                                             |
+| `migrate <pkg>` | Run one package's migrations explicitly              | Whatever the migrations write                      | Package not installed; invalid semver; a migration throws                                  |
+| `secrets`       | Print the declared secrets manifest                  | Nothing                                            | Config cannot be loaded                                                                    |
+| `init`          | Write a starter `cikick.config.ts`                   | `cikick.config.ts`                                 | Directory is not writable                                                                  |
 
 Usage errors reported by the argument parser (unknown command or option, missing required option) also exit with a non-zero status. Uncaught errors are printed as the bare error message to stderr and exit with code 1.
 
@@ -27,8 +27,8 @@ Usage errors reported by the argument parser (unknown command or option, missing
 
 Every command accepts:
 
-| Option | Default | Description |
-| --- | --- | --- |
+| Option         | Default         | Description                                                                                         |
+| -------------- | --------------- | --------------------------------------------------------------------------------------------------- |
 | `--dir <repo>` | `process.cwd()` | Repository directory. Config, lockfile, `package.json` and outputs are all resolved relative to it. |
 
 ## Configuration discovery
@@ -52,8 +52,8 @@ If both fail, the last error (from the GitHub API) is thrown. `synth --frozen` a
 
 ## Environment variables
 
-| Variable | Used by | Effect |
-| --- | --- | --- |
+| Variable       | Used by                                | Effect                                                                                                                             |
+| -------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `GITHUB_TOKEN` | `synth`, `lock`, `update` (non-frozen) | Bearer token for the GitHub API fallback resolver. Optional; unauthenticated requests are rate-limited. Not used by `GitResolver`. |
 
 No other environment variables are read by `cikick`.
@@ -64,11 +64,11 @@ No other environment variables are read by `cikick`.
 cikick synth [--dir <repo>] [--frozen] [--refresh]
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `--dir <repo>` | cwd | Repository directory. |
-| `--frozen` | off | Fail if a non-SHA action ref is missing from `cikick.lock.json`. No resolver is used. |
-| `--refresh` | off | Ignore existing lock entries and re-resolve every non-SHA ref. Combined with `--frozen` this always fails if any non-SHA ref exists. |
+| Option         | Default | Description                                                                                                                          |
+| -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `--dir <repo>` | cwd     | Repository directory.                                                                                                                |
+| `--frozen`     | off     | Fail if a non-SHA action ref is missing from `cikick.lock.json`. No resolver is used.                                                |
+| `--refresh`    | off     | Ignore existing lock entries and re-resolve every non-SHA ref. Combined with `--frozen` this always fails if any non-SHA ref exists. |
 
 Reads: config, installed cikick packages, `cikick.lock.json` (empty lockfile if absent), and `patchFile`s of merged managed files. Writes: every synthesized file (workflows under `.github/workflows/<id>.yml` and [managed files](/cikick/docs/concepts/managed-files/)) and `cikick.lock.json`. `seeded` files that already exist are kept. Files are written even if findings contain errors; the exit code reflects the findings.
 
@@ -114,10 +114,10 @@ Generated files are out of date. Run `npx cikick synth` and commit.
 cikick lock [--dir <repo>] [--refresh]
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `--dir <repo>` | cwd | Repository directory. |
-| `--refresh` | off | Re-resolve every non-SHA action ref. |
+| Option         | Default | Description                          |
+| -------------- | ------- | ------------------------------------ |
+| `--dir <repo>` | cwd     | Repository directory.                |
+| `--refresh`    | off     | Re-resolve every non-SHA action ref. |
 
 Runs a non-frozen synth in memory and writes only `cikick.lock.json`; workflow files are not touched. Output: `wrote cikick.lock.json`. Findings are not printed by this command, but an `error` finding still sets exit code `1`.
 
@@ -127,10 +127,10 @@ Runs a non-frozen synth in memory and writes only `cikick.lock.json`; workflow f
 cikick update [--dir <repo>] [--dry-run]
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `--dir <repo>` | cwd | Repository directory. |
-| `--dry-run` | off | List the migrations that would run; change nothing. |
+| Option         | Default | Description                                         |
+| -------------- | ------- | --------------------------------------------------- |
+| `--dir <repo>` | cwd     | Repository directory.                               |
+| `--dry-run`    | off     | List the migrations that would run; change nothing. |
 
 For each discovered cikick package, compares the version recorded in the lockfile (`packages`) with the installed version:
 
@@ -155,12 +155,12 @@ wrote cikick.lock.json
 cikick migrate <pkg> --from <version> [--to <version>] [--dir <repo>]
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `<pkg>` | required | Name of an installed cikick package. |
-| `--from <version>` | required | Version migrating from (exclusive lower bound). |
-| `--to <version>` | installed version | Version migrating to (inclusive upper bound). |
-| `--dir <repo>` | cwd | Repository directory. |
+| Option             | Default           | Description                                     |
+| ------------------ | ----------------- | ----------------------------------------------- |
+| `<pkg>`            | required          | Name of an installed cikick package.            |
+| `--from <version>` | required          | Version migrating from (exclusive lower bound). |
+| `--to <version>`   | installed version | Version migrating to (inclusive upper bound).   |
+| `--dir <repo>`     | cwd               | Repository directory.                           |
 
 Runs `pkg`'s migrations with `from < version <= to`, skipping everything if `from >= to`. Logs `migrate <pkg>@<version>: <description>` per migration. It does not run `synth` and does not update the lockfile; run `cikick synth` afterwards. Errors: `<pkg> is not an installed cikick package of <dir>`; `Invalid semver "<v>"`.
 
@@ -174,10 +174,10 @@ npx cikick migrate @your-org/wf-node --from 1.2.0 --to 1.3.0
 cikick secrets [--dir <repo>] [--json]
 ```
 
-| Option | Default | Description |
-| --- | --- | --- |
-| `--dir <repo>` | cwd | Repository directory. |
-| `--json` | off | Print the manifest as indented JSON (`SecretManifestEntry[]`). |
+| Option         | Default | Description                                                    |
+| -------------- | ------- | -------------------------------------------------------------- |
+| `--dir <repo>` | cwd     | Repository directory.                                          |
+| `--json`       | off     | Print the manifest as indented JSON (`SecretManifestEntry[]`). |
 
 Loads the config and prints every secret declared through `secret()`, sorted by name, scope, environment. Prints `No secrets declared.` when empty. This command only reads declarations; it does not contact GitHub (see [Secrets](/cikick/docs/concepts/secrets/) and `cikick-fleet secrets report`).
 

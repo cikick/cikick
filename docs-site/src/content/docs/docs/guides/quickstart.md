@@ -196,7 +196,9 @@ export default (app: App) => {
     packageManager: 'pnpm',
     test: 'pnpm test -- --coverage',
     release: {},
-    extraSteps: [{ name: 'Upload coverage', uses: 'actions/upload-artifact@v4', with: { name: 'coverage', path: 'coverage' } }],
+    extraSteps: [
+      { name: 'Upload coverage', uses: 'actions/upload-artifact@v4', with: { name: 'coverage', path: 'coverage' } },
+    ],
   });
 
   // Escape hatches into the shared construct
@@ -276,7 +278,7 @@ jobs:
           name: coverage
           path: coverage
     env:
-      CI: "true"
+      CI: 'true'
   release:
     # ... tag-triggered publish job, uses ${{ secrets.NPM_TOKEN }}
 ```

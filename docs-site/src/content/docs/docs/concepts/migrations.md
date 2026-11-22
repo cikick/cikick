@@ -9,17 +9,17 @@ When a shared package renames a prop or restructures its output, every consuming
 
 ```ts
 interface Migration {
-  version: string;           // semver of the package release that introduced it
+  version: string; // semver of the package release that introduced it
   description: string;
   run(ctx: MigrationContext): Promise<void>;
 }
 
 interface MigrationContext {
   repoDir: string;
-  readFile(path: string): string | undefined;   // relative to repoDir
+  readFile(path: string): string | undefined; // relative to repoDir
   writeFile(path: string, content: string): void; // creates directories
-  deleteFile(path: string): void;               // no-op if absent
-  project: Project;                             // ts-morph, containing the cikick config file
+  deleteFile(path: string): void; // no-op if absent
+  project: Project; // ts-morph, containing the cikick config file
   log(msg: string): void;
 }
 ```
@@ -35,8 +35,8 @@ The package points its `cikick` field at a module that exports `{ migrations, ch
 ```
 
 ```ts title="src/cikick.ts"
-export const migrations: Migration[] = [ /* ... */ ];
-export const checks: Check[] = [ /* optional, see Checks */ ];
+export const migrations: Migration[] = [/* ... */];
+export const checks: Check[] = [/* optional, see Checks */];
 export default { migrations, checks };
 ```
 

@@ -16,9 +16,7 @@ The selection is a JSON file (`fleet.json` by default; `-c, --config <path>` to 
   "repos": ["acme/api", "acme/web", "acme/infra"],
   "groups": { "backend": ["acme/api", "acme/infra"] },
   "settingsPolicy": { "defaultWorkflowPermissions": "read" },
-  "secretPolicies": [
-    { "name": "NPM_TOKEN", "scope": "repo", "maxAgeDays": 90, "group": "backend" }
-  ]
+  "secretPolicies": [{ "name": "NPM_TOKEN", "scope": "repo", "maxAgeDays": 90, "group": "backend" }]
 }
 ```
 
@@ -50,13 +48,13 @@ For each selected repo, reads `cikick.lock.json` and `.github/workflows/*.yml|ya
 
 Compares repo Actions settings with `settingsPolicy`. Only keys present in the policy are checked:
 
-| Policy key | Behaviour |
-|---|---|
-| `defaultWorkflowPermissions` (`read`/`write`) | Diffed and applied. |
-| `canApprovePullRequestReviews` (boolean) | Diffed and applied. |
-| `allowedActions` (`all`/`local_only`/`selected`) | Diffed and applied. |
-| `selectedActions.githubOwnedAllowed`, `.verifiedAllowed`, `.patternsAllowed` | Diffed and applied (pattern lists compared as sets). Read only when the repo's allowed-actions mode is `selected`. |
-| `requireRuleset: { branch }` | **Report-only.** Shows whether an active ruleset covers the branch (or branch protection only, or none). `apply` never creates or edits rulesets. |
+| Policy key                                                                   | Behaviour                                                                                                                                         |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `defaultWorkflowPermissions` (`read`/`write`)                                | Diffed and applied.                                                                                                                               |
+| `canApprovePullRequestReviews` (boolean)                                     | Diffed and applied.                                                                                                                               |
+| `allowedActions` (`all`/`local_only`/`selected`)                             | Diffed and applied.                                                                                                                               |
+| `selectedActions.githubOwnedAllowed`, `.verifiedAllowed`, `.patternsAllowed` | Diffed and applied (pattern lists compared as sets). Read only when the repo's allowed-actions mode is `selected`.                                |
+| `requireRuleset: { branch }`                                                 | **Report-only.** Shows whether an active ruleset covers the branch (or branch protection only, or none). `apply` never creates or edits rulesets. |
 
 `settings apply` is a **dry run unless `--yes`**: without it, it prints `would set <repo>: ...` and changes nothing. With `--yes` it issues the PUT calls and exits 1 if any fail.
 
@@ -64,12 +62,12 @@ Compares repo Actions settings with `settingsPolicy`. Only keys present in the p
 
 Lists secret **names and ages** (GitHub's `updated_at`) for repo-level and environment-level secrets of the selected repos; it cannot see values. Each row gets a status:
 
-| Status | Meaning |
-|---|---|
-| `ok` | Matches a `secretPolicies` entry and is within `maxAgeDays`. |
-| `stale` | Matches a policy but older than its `maxAgeDays`. |
-| `missing` | A policy applies to this repo but no such secret exists. |
-| `untracked` | Exists, matches no policy, within the default max age. |
+| Status            | Meaning                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| `ok`              | Matches a `secretPolicies` entry and is within `maxAgeDays`.               |
+| `stale`           | Matches a policy but older than its `maxAgeDays`.                          |
+| `missing`         | A policy applies to this repo but no such secret exists.                   |
+| `untracked`       | Exists, matches no policy, within the default max age.                     |
 | `untracked-stale` | Exists, matches no policy, older than the default (`--max-age`, 180 days). |
 
 The command exits 1 if any row is `stale`, `missing` or `untracked-stale`. Per-repo API errors are printed but do not set the exit code by themselves. `--json` for machine output.

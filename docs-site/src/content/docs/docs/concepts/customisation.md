@@ -17,7 +17,9 @@ const ci = new NodeCi(app, 'node', {
   packageManager: 'pnpm',
   test: 'pnpm test -- --coverage',
   release: {},
-  extraSteps: [{ name: 'Upload coverage', uses: 'actions/upload-artifact@v4', with: { name: 'coverage', path: 'coverage' } }],
+  extraSteps: [
+    { name: 'Upload coverage', uses: 'actions/upload-artifact@v4', with: { name: 'coverage', path: 'coverage' } },
+  ],
 });
 ```
 
@@ -111,12 +113,12 @@ Use the `Workflow.isWorkflow`, `Job.isJob` and `Step.isStep` guards rather than 
 
 ### Stock aspects in `@cikick/policies`
 
-| Aspect | What it does |
-|---|---|
-| `new ExplicitPermissions({ default?, level? })` | Sets permissions where none are declared. Default `{ contents: 'read' }`; `level: 'workflow'` (default) sets them on workflows, `'job'` on every job lacking them. Never overwrites existing permissions. |
-| `new DefaultTimeout(minutes)` | Sets `timeoutMinutes` on every job that has none, except reusable-workflow calls (`uses`). |
-| `new HardenRunner({ egressPolicy?, action?, with? })` | Prepends a `step-security/harden-runner@v2` step (egress policy `audit` by default) to every job that has steps. Skips jobs that already start with it, and reusable-workflow calls. |
-| `new ReplaceAction({ from, to })` | Replaces one exact `owner/repo[/path]@ref` with another on steps and jobs. Useful to move a whole repo off a deprecated action version. |
+| Aspect                                                | What it does                                                                                                                                                                                              |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `new ExplicitPermissions({ default?, level? })`       | Sets permissions where none are declared. Default `{ contents: 'read' }`; `level: 'workflow'` (default) sets them on workflows, `'job'` on every job lacking them. Never overwrites existing permissions. |
+| `new DefaultTimeout(minutes)`                         | Sets `timeoutMinutes` on every job that has none, except reusable-workflow calls (`uses`).                                                                                                                |
+| `new HardenRunner({ egressPolicy?, action?, with? })` | Prepends a `step-security/harden-runner@v2` step (egress policy `audit` by default) to every job that has steps. Skips jobs that already start with it, and reusable-workflow calls.                      |
+| `new ReplaceAction({ from, to })`                     | Replaces one exact `owner/repo[/path]@ref` with another on steps and jobs. Useful to move a whole repo off a deprecated action version.                                                                   |
 
 `applyBaseline(app)` registers `ExplicitPermissions` and `DefaultTimeout(30)` plus the stock checks in one call; that is where `timeout-minutes: 30` and `permissions: contents: read` in the example `ci.yml` come from.
 
@@ -130,12 +132,12 @@ Aspects.of(app).add(new ReplaceAction({ from: 'actions/upload-artifact@v3', to: 
 
 ## Choosing a level
 
-| Situation | Use |
-|---|---|
-| The package has a prop for it | Props. |
-| One repo needs a one-off tweak to a package's job | Exposed members or `props` mutation; use `addOverride` only for fields props cannot reach. |
-| You need to set a raw YAML key the model does not have | `addOverride`. Keep a comment saying why; it is the most fragile option. |
-| A rule must hold for every workflow in the repo (or in every repo via a shared package) | An aspect. |
-| You want to be told when a rule is violated, not silently fix it | A [check](/cikick/docs/concepts/checks/), not an aspect. |
+| Situation                                                                               | Use                                                                                        |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| The package has a prop for it                                                           | Props.                                                                                     |
+| One repo needs a one-off tweak to a package's job                                       | Exposed members or `props` mutation; use `addOverride` only for fields props cannot reach. |
+| You need to set a raw YAML key the model does not have                                  | `addOverride`. Keep a comment saying why; it is the most fragile option.                   |
+| A rule must hold for every workflow in the repo (or in every repo via a shared package) | An aspect.                                                                                 |
+| You want to be told when a rule is violated, not silently fix it                        | A [check](/cikick/docs/concepts/checks/), not an aspect.                                   |
 
 A useful pattern is an aspect to fix what is safe to fix automatically (permissions, timeouts) paired with a check for what needs a human decision.

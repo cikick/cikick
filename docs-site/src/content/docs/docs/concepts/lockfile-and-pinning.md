@@ -53,13 +53,13 @@ A short SHA (anything not 40 hex characters) is treated as a ref name and will n
 
 ## Commands and flags
 
-| Command | Resolution behaviour |
-|---|---|
-| `cikick synth` | Resolves only keys missing from the lock; writes workflows and lock. |
-| `cikick synth --frozen` | Never resolves. If any non-SHA ref is missing from the lock, fails with `cikick.lock.json is missing entries (frozen mode): ...`. |
-| `cikick synth --refresh` | Ignores existing entries and re-resolves every ref. This is how you deliberately move a pin forward. |
-| `cikick lock` (`--refresh`) | Same resolution as synth, but writes only `cikick.lock.json`, not the workflows. |
-| `cikick check` | Always frozen. Fails on missing lock entries, on drift (including a lockfile that differs from what synth would write), and on error findings. |
+| Command                     | Resolution behaviour                                                                                                                           |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cikick synth`              | Resolves only keys missing from the lock; writes workflows and lock.                                                                           |
+| `cikick synth --frozen`     | Never resolves. If any non-SHA ref is missing from the lock, fails with `cikick.lock.json is missing entries (frozen mode): ...`.              |
+| `cikick synth --refresh`    | Ignores existing entries and re-resolves every ref. This is how you deliberately move a pin forward.                                           |
+| `cikick lock` (`--refresh`) | Same resolution as synth, but writes only `cikick.lock.json`, not the workflows.                                                               |
+| `cikick check`              | Always frozen. Fails on missing lock entries, on drift (including a lockfile that differs from what synth would write), and on error findings. |
 
 See the [CLI reference](/cikick/docs/reference/cikick-cli/) for the full option list, and [CI check guide](/cikick/docs/guides/ci-check/) for wiring `check` into a pipeline.
 

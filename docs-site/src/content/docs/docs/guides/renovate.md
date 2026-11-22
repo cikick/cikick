@@ -12,39 +12,23 @@ This is the real `renovate.json` of the example consumer (`examples/consumer`):
 ```json title="renovate.json"
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
+  "extends": ["config:recommended"],
   "github-actions": {
     "enabled": false
   },
   "packageRules": [
     {
-      "matchPackageNames": [
-        "@acme/wf-node-ci",
-        "/^@cikick\\//"
-      ],
+      "matchPackageNames": ["@acme/wf-node-ci", "/^@cikick\\//"],
       "groupName": "cikick",
       "postUpgradeTasks": {
-        "commands": [
-          "npx cikick update"
-        ],
-        "fileFilters": [
-          ".github/**",
-          "cikick.lock.json",
-          "renovate.json",
-          ".nvmrc"
-        ],
+        "commands": ["npx cikick update"],
+        "fileFilters": [".github/**", "cikick.lock.json", "renovate.json", ".nvmrc"],
         "executionMode": "branch"
       }
     }
   ],
-  "schedule": [
-    "before 5am on monday"
-  ],
-  "labels": [
-    "dependencies"
-  ]
+  "schedule": ["before 5am on monday"],
+  "labels": ["dependencies"]
 }
 ```
 
@@ -126,7 +110,7 @@ For a package seen for the first time (no entry in the lock) it logs `first adop
 
 There are two mechanisms that both talk about pinning actions to digests. They cover different files.
 
-**cikick** pins every action used by a *generated* workflow. The construct or config says `actions/checkout@v4`; at synth time cikick resolves `v4` to a commit SHA, stores it in `cikick.lock.json` keyed `actions/checkout@v4`, and renders `uses: actions/checkout@<sha> # v4`. The pin lives in the lockfile, and existing entries are trusted on later syntheses. (See [Lockfile and pinning](/cikick/docs/concepts/lockfile-and-pinning/).)
+**cikick** pins every action used by a _generated_ workflow. The construct or config says `actions/checkout@v4`; at synth time cikick resolves `v4` to a commit SHA, stores it in `cikick.lock.json` keyed `actions/checkout@v4`, and renders `uses: actions/checkout@<sha> # v4`. The pin lives in the lockfile, and existing entries are trusted on later syntheses. (See [Lockfile and pinning](/cikick/docs/concepts/lockfile-and-pinning/).)
 
 **Renovate's `helpers:pinGitHubActionDigests`** pins and updates actions inside workflow files it finds in the repository. That is useful for hand-written workflows that cikick does not generate.
 
