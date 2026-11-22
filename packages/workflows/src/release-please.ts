@@ -3,6 +3,10 @@ import { Construct } from 'constructs';
 
 const PUBLISH_ALL = 'publish_all';
 
+/** `packageName` -> `package-name`; keys that are already kebab-case pass through. */
+const kebabKeys = (o: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(o).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`), v]));
+
 export interface ReleasePleaseAppToken {
   /** Repository/org variable holding the GitHub App ID. Default `RELEASE_APP_ID`. */
   appIdVariable?: string;
@@ -10,9 +14,31 @@ export interface ReleasePleaseAppToken {
   privateKeySecret?: string;
 }
 
+export interface ReleasePleaseToken {
+  /** Secret holding a token (e.g. a PAT) for release-please, so release PRs trigger CI. */
+  secret: string;
+  /** Fall back to the workflow's `github.token` when the secret is empty. Default false. */
+  fallbackToGithubToken?: boolean;
+}
+
+/** Per-package entry of `release-please-config.json`. camelCase keys are written kebab-case (`packageName` -> `package-name`). */
+export interface ReleasePleasePackageConfig {
+  packageName?: string;
+  changelogPath?: string;
+  releaseType?: string;
+  extraFiles?: unknown[];
+  [key: string]: unknown;
+}
+
 export interface ReleasePleaseProps {
-  /** Package paths to release (`'.'` for a single-package repo). Default `['.']`. */
+  /** Package paths to release (`'.'` for a single-package repo). Default: the keys of `packagesConfig`, else `['.']`. */
   packages?: string[];
+  /** Per-package config written under `packages` in `release-please-config.json`. Keys must be in `packages`. */
+  packagesConfig?: Record<string, ReleasePleasePackageConfig>;
+  /** Override `include-component-in-tag`. Default: `true` for monorepos, unset for a single root package. */
+  includeComponentInTag?: boolean;
+  /** Run with this token instead of `GITHUB_TOKEN`. Not combinable with `appToken`. */
+  token?: ReleasePleaseToken;
   /** Version written to `.release-please-manifest.json` when it is first created. Default `0.1.0`. */
   initialVersion?: string;
   /** release-please release type. Default `node`. */
@@ -59,7 +85,10 @@ export class ReleasePlease extends Construct {
 
   constructor(scope: Construct, id: string, props: ReleasePleaseProps = {}) {
     super(scope, id);
-    const packages = props.packages ?? ['.'];
+    if (props.token && props.appToken) throw new Error('ReleasePlease: `token` and `appToken` are mutually exclusive');
+    const packages = props.packages ?? (props.packagesConfig ? Object.keys(props.packagesConfig) : ['.']);
+    for (const k of Object.keys(props.packagesConfig ?? {}))
+      if (!packages.includes(k)) throw new Error(`ReleasePlease: packagesConfig key "${k}" is not in packages`);
     const monorepo = packages.length > 1 || packages[0] !== '.';
 
     new ManagedFile(this, 'config', {
@@ -70,9 +99,14 @@ export class ReleasePlease extends Construct {
         'release-type': props.releaseType ?? 'node',
         ...(monorepo
           ? { 'include-component-in-tag': true, 'separate-pull-requests': false, plugins: ['node-workspace'] }
+          : props.includeComponentInTag === undefined
+            ? {}
+            : { 'include-component-in-tag': props.includeComponentInTag }),
+        ...(monorepo && props.includeComponentInTag !== undefined
+          ? { 'include-component-in-tag': props.includeComponentInTag }
           : {}),
         ...props.config,
-        packages: Object.fromEntries(packages.map((p) => [p, {}])),
+        packages: Object.fromEntries(packages.map((p) => [p, kebabKeys(props.packagesConfig?.[p] ?? {})])),
       },
     });
     new ManagedFile(this, 'manifest', {
@@ -98,7 +132,11 @@ export class ReleasePlease extends Construct {
             }
           : {},
       },
-      permissions: props.appToken ? { contents: 'read' } : { contents: 'write', pullRequests: 'write' },
+      // A dedicated token does the writing; with a `github.token` fallback the workflow token must be able to as well.
+      permissions:
+        props.appToken || (props.token && !props.token.fallbackToGithubToken)
+          ? { contents: 'read' }
+          : { contents: 'write', pullRequests: 'write' },
       concurrency: { group: 'release-please', cancelInProgress: false },
     });
     const job = (this.job = this.workflow.addJob('release-please', {
@@ -122,6 +160,10 @@ export class ReleasePlease extends Construct {
         },
       });
       token = '${{ steps.app-token.outputs.token }}';
+    }
+    if (props.token) {
+      const ref = secret(this, props.token.secret, { description: 'Token used by release-please' });
+      token = props.token.fallbackToGithubToken ? ref.replace(' }}', ' || github.token }}') : ref;
     }
     job.addStep({
       id: 'release',
