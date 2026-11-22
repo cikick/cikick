@@ -26,7 +26,7 @@ const steps = [
   { who: 'shared package repo', title: 'Publish @acme/wf-node-ci 2.0.0', body: 'A breaking rename ships with a codemod. One release, written once by the platform team.' },
   { who: 'every consumer repo', title: 'Renovate opens a PR', body: 'It bumps the dependency like any other, and runs <code>npx cikick update</code> as a post-upgrade task.' },
   { who: 'in the PR branch', title: 'cikick update runs the migration', body: 'Migrations between the locked and installed versions run in order, editing <code>cikick.config.ts</code> with ts-morph.', term: log },
-  { who: 'in the PR branch', title: 'Synth, then the PR shows the diff', body: 'Config, generated YAML and lockfile change together, so a reviewer sees exactly what CI will do.', term: diff },
+  { who: 'in the PR branch', title: 'Synth, then the PR shows the diff', body: 'The config edit and the file changes land in one PR, so a reviewer sees exactly what changed before anything merges.', term: diff },
   { who: 'in CI', title: 'cikick check goes green', body: 'Generated files match the config, the lock covers every action, and policy checks pass. Merge.', ok: true },
 ];
 ---

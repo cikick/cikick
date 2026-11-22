@@ -1,13 +1,30 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-// GitHub Pages project site: https://cikick.github.io/cikick/
-const site = process.env.DOCS_SITE ?? 'https://cikick.github.io';
-const base = process.env.DOCS_BASE ?? '/cikick';
+// Default: GitHub Pages project site https://cikick.github.io/cikick/ (base /cikick).
+// Cloudflare Workers (Workers Builds sets WORKERS_CI, `wrangler deploy` sets WRANGLER_COMMAND) serves at the root.
+// DOCS_SITE / DOCS_BASE override either.
+const onCloudflare = Boolean(process.env.WORKERS_CI || process.env.WRANGLER_COMMAND);
+const site = process.env.DOCS_SITE ?? (onCloudflare ? undefined : 'https://cikick.github.io');
+const base = process.env.DOCS_BASE ?? (onCloudflare ? '/' : '/cikick');
+
+// Markdown content links are authored as `/cikick/...` (the GitHub Pages base). Rewrite them to the
+// configured base so the same content works at `/` (Cloudflare) and `/cikick` (GitHub Pages).
+const prefix = base.replace(/\/$/, '');
+function remarkRebaseLinks() {
+  const walk = (node) => {
+    if ((node.type === 'link' || node.type === 'definition') && typeof node.url === 'string' && node.url.startsWith('/cikick/')) {
+      node.url = prefix + node.url.slice('/cikick'.length);
+    }
+    node.children?.forEach(walk);
+  };
+  return walk;
+}
 
 export default defineConfig({
   site,
   base,
+  markdown: { remarkPlugins: [remarkRebaseLinks] },
   integrations: [
     starlight({
       title: 'cikick',
