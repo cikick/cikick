@@ -1,20 +1,22 @@
 ---
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const cmds = `git clone https://github.com/cikick/cikick && cd cikick
-pnpm install && pnpm build && pnpm install   # 2nd install links the built bins
+# the 2nd install links the built bins
+pnpm install && pnpm build && pnpm install
 cd examples/consumer && pnpm exec cikick check`;
 ---
 <section id="quickstart" class="sec sec-alt" aria-labelledby="qs-title">
   <div class="wrap qs">
     <div>
       <p class="eyebrow">Quickstart</p>
-      <h2 id="qs-title">See it on a real consumer repo.</h2>
+      <h2 id="qs-title">Build it from source, check a real consumer.</h2>
       <p class="sec-lede">
-        <code>examples/consumer</code> is a repo that uses a shared package, with its generated <code>ci.yml</code> and
-        <code>cikick.lock.json</code> committed. <code>cikick check</code> verifies they match the config, offline.
+        This clones the cikick monorepo, builds every package from source, then runs <code>cikick check</code> on
+        <code>examples/consumer</code>: a repo that uses a shared package, with its generated <code>ci.yml</code> and
+        <code>cikick.lock.json</code> committed. The check verifies they match the config, offline.
       </p>
       <p class="note">
-        cikick is pre-release (0.1.0) and this repo's packages are not yet published to a registry, so the quickstart builds from source.
+        cikick is pre-release (0.1.0) and its packages are not yet published to a registry, so there is no <code>npm install</code> yet.
         The guide covers wiring it into your own repo.
       </p>
       <div class="cta-row">
@@ -25,7 +27,7 @@ cd examples/consumer && pnpm exec cikick check`;
     <div class="code-win term-win">
       <div class="win-bar"><span></span><span></span><span></span><b>terminal</b>
         <button class="copy" type="button" data-copy="qs-cmds">Copy</button></div>
-      <pre class="code qs-pre" id="qs-cmds">{cmds}</pre>
+      <pre class="code qs-pre" id="qs-cmds" tabindex="0">{cmds}</pre>
     </div>
   </div>
 </section>

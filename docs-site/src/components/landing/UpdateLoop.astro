@@ -15,6 +15,12 @@ const diff = [
   `<span class="ln d-add">+  new NodeCi(app, 'node', { nodeVersion: 22 })</span>`,
   `<span class="ln d-file">.github/workflows/node.yml</span>`,
   `<span class="ln d-del">-  (legacy generated file removed)</span>`,
+  `<span class="ln d-file">.github/workflows/ci.yml</span>`,
+  `<span class="ln d-del">-        node-version: 20</span>`,
+  `<span class="ln d-add">+        node-version: 22</span>`,
+  `<span class="ln d-file">cikick.lock.json</span>`,
+  `<span class="ln d-del">-  "packages": { "@acme/wf-node-ci": "1.4.0" }</span>`,
+  `<span class="ln d-add">+  "packages": { "@acme/wf-node-ci": "2.0.0" }</span>`,
 ].join('');
 const steps = [
   { who: 'shared package repo', title: 'Publish @acme/wf-node-ci 2.0.0', body: 'A breaking rename ships with a codemod. One release, written once by the platform team.' },
@@ -39,13 +45,16 @@ const steps = [
             <p class="step-who">{s.who}</p>
             <h3>{s.title}</h3>
             <p set:html={s.body}></p>
-            {s.term && <pre class="code term sm" aria-label="Example terminal output" set:html={s.term}></pre>}
+            {s.term && <pre class="code term sm" tabindex="0" aria-label="Example terminal output" set:html={s.term}></pre>}
             {s.ok && <p class="pass"><span class="pill ok">check passed</span> <code>npx cikick check</code> exits 0</p>}
           </div>
         </li>
       ))}
     </ol>
-    <button class="replay" type="button" data-replay="loopanim">Replay</button>
+    <p class="note center">
+      If a migration throws, <code>cikick update</code> stops with the error and exits non-zero. It does not synth or update the lockfile, so <code>cikick check</code> fails and the PR stays red. Edits the earlier migrations made are left in the working tree for you to inspect.
+      Once <code>cikick check</code> is green, Renovate automerge is an option you can enable in your Renovate config.
+    </p>
     <p class="note center">
       Without a codemod you can still ship a <em>check</em> with <code>enforceAfter</code>: a warning today, a CI error after a date you choose.
     </p>
