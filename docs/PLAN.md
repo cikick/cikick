@@ -8,7 +8,7 @@ CDK-style workflow manager for GitHub Actions, distributed as npm packages.
 3. Pin every action to a commit SHA via `cikick.lock.json`; Renovate bumps packages, `cikick synth` regenerates.
 4. Policies (aspects) and checks over the construct tree, repo files and GitHub repo settings.
 5. Versioned migrations (codemods) shipped by packages, run by `cikick update` — Nx-style.
-6. Org control plane: inventory, settings drift, secret age policy, multi-repo secret rotation (repo/env/org scopes).
+6. Fleet control plane over a **user-selected set of repositories** (not the whole org): inventory, settings drift, secret age policy, multi-repo secret rotation (repo/env scopes; org scope only if explicitly selected).
 
 ## Monorepo layout (pnpm workspaces, TS ESM, NodeNext, vitest)
 | Package | Purpose |
@@ -16,7 +16,7 @@ CDK-style workflow manager for GitHub Actions, distributed as npm packages.
 | `packages/core` `@cikick/core` | constructs, synth, lockfile, aspects, checks, managed files, secrets declarations, migrations API |
 | `packages/policies` `@cikick/policies` | stock aspects/checks (pin SHAs, explicit permissions, no `pull_request_target`+checkout, timeouts, deprecations) |
 | `packages/cli` `@cikick/cli` | `cikick synth/check/lock/update/migrate` — loads `cikick.config.ts` (via `jiti`) |
-| `packages/org` `@cikick/org` | `cikick-org inventory/settings/secrets` — Octokit, libsodium sealed boxes, HTML report |
+| `packages/fleet` `@cikick/fleet` | `cikick-fleet select/inventory/settings/secrets/report` over user-chosen repos — Octokit, libsodium sealed boxes, HTML report |
 | `examples/wf-node-ci` `@acme/wf-node-ci` | example shared package: construct + managed config + migrations |
 | `examples/consumer` | example repo using it with overrides |
 
@@ -58,14 +58,16 @@ interface MigrationContext { repoDir; readFile; writeFile; project: import('ts-m
 - `cikick update`: compares `lock.packages` with installed versions; runs each package's migrations with `from < version <= to` in order; then synth.
 - Checks with `enforceAfter` nudge manual migrations (warn → error after date).
 
-## Org control plane (`@cikick/org`)
-- `org.config.ts`: `{ org, repos?: string[]|'all', settingsPolicy, secretPolicies: [{ name, scope, maxAgeDays, provider, repos }] }`
-- `inventory`: per repo — cikick lock (packages + pinned actions), drift (`synth --check` result uploaded? no: read lock + workflow headers via API), action SHAs in use.
-- `settings diff|apply`: default workflow permissions read, allowed actions, actions enabled, rulesets/branch protection presence.
-- `secrets report`: list repo/env/org secrets, `updated_at` vs `maxAgeDays`.
-- `secrets rotate <NAME> --repos ... --from-env|--from-provider`: get public key, seal with libsodium, PUT; dry-run default.
-- `report --html out.html`: static dashboard.
+## Fleet control plane (`@cikick/fleet`)
+Scope is **only the repositories the user selects** — never implicitly "all repos in the org".
+- `cikick-fleet select`: lists repos the authenticated user can administer (`GET /user/repos?affiliation=owner,organization_member` filtered to `permissions.admin`), optional `--owner`/`--filter` glob, interactive multi-select (`@inquirer/prompts` checkbox) or non-interactive `--add owner/repo --remove owner/repo`. Persists to `fleet.config.ts`/`fleet.json` in the user's chosen dir (e.g. a personal "fleet" repo).
+- `fleet.json`: `{ repos: ["owner/repo", ...], groups?: { name: ["owner/repo"] }, settingsPolicy, secretPolicies: [{ name, scope: 'repo'|'env', environment?, maxAgeDays, repos?: string[] /*subset or group*/ }] }`. Every command accepts `--repos`/`--group` to narrow further; refuses to touch a repo not in the selection.
+- `inventory`: per selected repo — cikick lock (packages + pinned actions) read via contents API, generated-header presence, action SHAs in use.
+- `settings diff|apply`: default workflow permissions read, allowed actions, actions enabled, rulesets/branch protection presence. `apply` is dry-run unless `--yes`.
+- `secrets report`: repo/env secrets of selected repos, `updated_at` vs `maxAgeDays`, plus secrets declared in each repo's cikick manifest but missing.
+- `secrets rotate <NAME> [--group g] --value-from-env VAR|--value-from-stdin`: public key → libsodium sealed box → PUT on each selected repo/env; dry-run unless `--yes`.
+- `report --html out.html`: static dashboard of the selection.
 - All GitHub I/O behind an injected Octokit for tests (mocked).
 
 ## Phases
-0. Scaffold (orchestrator). 1. Core (agent A). 2. Parallel: CLI+migrations (B), org (C), policies+examples+docs (D). 3. Integrate: build, test, consumer synth smoke test, commit.
+0. Scaffold (orchestrator). 1. Core (agent A). 2. Parallel: CLI+migrations (B), fleet (C), policies+examples+docs (D). 3. Integrate: build, test, consumer synth smoke test, commit.
