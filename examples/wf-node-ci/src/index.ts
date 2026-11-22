@@ -83,7 +83,10 @@ export class NodeCi extends Construct {
       patchFile: 'renovate.patch.json',
       content: {
         $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-        extends: ['config:recommended', 'helpers:pinGitHubActionDigests'],
+        extends: ['config:recommended'],
+        // cikick.lock.json owns action pins for generated workflows (refresh with `cikick lock --refresh`).
+        // Renovate must not edit generated .github/workflows/*.yml, or `cikick check` drifts / the bump is reverted on re-synth.
+        'github-actions': { enabled: false },
         packageRules: [
           {
             matchPackageNames: ['@acme/wf-node-ci', '/^@cikick\\//'],

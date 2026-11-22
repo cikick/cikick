@@ -26,7 +26,8 @@ describe('NodeCi', () => {
     expect(ci).toContain('node-version: 24');
     expect(ci).toContain('${{ secrets.NPM_TOKEN }}');
     expect(r.files[1]!.content).toBe('24\n');
-    expect(r.files[2]!.content).toContain('helpers:pinGitHubActionDigests');
+    expect(r.files[2]!.content).not.toContain('pinGitHubActionDigests');
+    expect(JSON.parse(r.files[2]!.content)['github-actions']).toEqual({ enabled: false });
     expect(secretsManifest(app)).toEqual([{ name: 'NPM_TOKEN', scope: 'repo', maxAgeDays: 90, provider: 'npm' }]);
   });
   it('defaults: npm, node 22, no release; escape hatches', async () => {

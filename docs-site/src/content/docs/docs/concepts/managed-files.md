@@ -68,7 +68,8 @@ new ManagedFile(this, 'renovate', {
   patchFile: 'renovate.patch.json',
   content: {
     $schema: 'https://docs.renovatebot.com/renovate-schema.json',
-    extends: ['config:recommended', 'helpers:pinGitHubActionDigests'],
+    extends: ['config:recommended'],
+    'github-actions': { enabled: false }, // cikick.lock.json owns action pins
     packageRules: [ /* group @acme/wf-node-ci and @cikick/*, run `npx cikick update` */ ],
   },
 });

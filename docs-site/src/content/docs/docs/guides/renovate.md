@@ -13,9 +13,11 @@ This is the real `renovate.json` of the example consumer (`examples/consumer`):
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    "config:recommended"
   ],
+  "github-actions": {
+    "enabled": false
+  },
   "packageRules": [
     {
       "matchPackageNames": [
@@ -133,8 +135,8 @@ How they interact:
 - Generated workflow files are rewritten by `cikick synth`. Hand-bumping an action ref or SHA inside a generated YAML file is pointless: the next synth reverts it, and until then `cikick check` fails with drift.
 - Action version bumps for generated workflows happen at the source: change the ref in the construct or package (`actions/checkout@v4` to `@v5`) and run `npx cikick synth`. The new key is not in the lock, so it is resolved and recorded; keys no longer used are dropped from the lock on the next write.
 - A floating ref such as `@v4` stays pinned to the SHA recorded at the time. To pick up newer commits for existing refs, run `npx cikick synth --refresh`, which re-resolves all refs and rewrites the workflows and lockfile (`npx cikick lock --refresh` updates only the lockfile, which leaves the workflows drifting until the next synth). Do this on a schedule or in a dedicated PR if you want it.
-- The preset is harmless in a repository where everything is generated, since cikick's output is already SHA-pinned. The example package includes it so hand-written workflows next to generated ones also get pinned.
-- If you see Renovate PRs editing files under `.github/workflows` that cikick generates, those PRs will fail `cikick check` and will be overwritten by the next synth. Exclude those files from Renovate's github-actions manager (for example with a `packageRules` entry using `matchFileNames` and `enabled: false`, or by disabling that manager) after checking the option names against the Renovate docs for your version. This guide does not verify Renovate's behaviour for already-pinned refs.
+- The managed `renovate.json` therefore disables Renovate's `github-actions` manager and does not extend `helpers:pinGitHubActionDigests`: `cikick.lock.json` owns the pins of generated workflows. Refresh them with `cikick lock --refresh` (or `cikick synth --refresh`). If you also keep hand-written workflows, re-enable the manager in `renovate.patch.json` with `ignorePaths`/`packageRules` that exclude the generated files.
+- If you see Renovate PRs editing files under `.github/workflows` that cikick generates, those PRs will fail `cikick check` and will be overwritten by the next synth. If you re-enabled the manager, exclude those files from it (for example with a `packageRules` entry using `matchFileNames` and `enabled: false`) after checking the option names against the Renovate docs for your version. This guide does not verify Renovate's behaviour for already-pinned refs.
 
 `cikick-fleet inventory` flags any `uses:` in a repository's workflows that is not a 40-hex SHA, which helps find repositories that still have unpinned hand-written workflows.
 

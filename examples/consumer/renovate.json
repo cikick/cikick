@@ -1,9 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    "config:recommended"
   ],
+  "github-actions": {
+    "enabled": false
+  },
   "packageRules": [
     {
       "matchPackageNames": [
