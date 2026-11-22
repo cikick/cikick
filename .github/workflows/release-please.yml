@@ -46,7 +46,6 @@ jobs:
       - name: Publish released packages
         env:
           PATHS_RELEASED: ${{ needs.release-please.outputs.paths_released }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |-
           set -euo pipefail
           out="$RUNNER_TEMP/packages"; mkdir -p "$out"

@@ -36,7 +36,16 @@ EOF
   echo "publish $name@$VERSION"
   # --tag placeholder keeps it off `latest` where npm allows it (npm may still point latest at a package's first version).
   (cd "$dir" && npm publish --access public --tag placeholder $DRY_RUN)
-  [[ -z "$DRY_RUN" ]] && npm deprecate "$name@$VERSION" "Placeholder, not a real release" || true
+  [[ -n "$DRY_RUN" ]] && continue
+  # A just-published package can 404 for a short while; retry, and never fail the run on it.
+  for i in 1 2 3 4 5 6; do
+    if npm deprecate "$name@$VERSION" "Placeholder, not a real release" 2>/dev/null; then
+      echo "deprecated $name@$VERSION"
+      break
+    fi
+    [[ $i == 6 ]] && echo "warn  could not deprecate $name@$VERSION yet; run later: npm deprecate $name@$VERSION 'Placeholder'" >&2
+    sleep 10
+  done
 done
 
 cat <<'EOF'
