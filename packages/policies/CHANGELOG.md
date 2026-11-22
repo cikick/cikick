@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/cikick/cikick/compare/policies-v0.6.0...policies-v0.7.0) (2026-11-22)
+
+
+### Features
+
+* **workflows:** CloudflareDeploy, extended NodeCi and ReleasePlease options ([#9](https://github.com/cikick/cikick/issues/9)) ([d8f993d](https://github.com/cikick/cikick/commit/d8f993d3cdd853f762b0095196f1a95c1577e649))
+
 ## [0.6.0](https://github.com/cikick/cikick/compare/policies-v0.5.1...policies-v0.6.0) (2026-11-22)
 
 
