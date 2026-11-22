@@ -1,5 +1,5 @@
 import { emptyLockfile, readLockfile, selectMigrations, type Migration, type MigrationContext } from '@cikick/core';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import semver from 'semver';
 import { Project } from 'ts-morph';
@@ -46,6 +46,9 @@ function makeContext(repoDir: string, configPath: string, log: (m: string) => vo
       const f = join(repoDir, p);
       mkdirSync(dirname(f), { recursive: true });
       writeFileSync(f, content);
+    },
+    deleteFile(p) {
+      rmSync(join(repoDir, p), { force: true });
     },
   };
 }

@@ -101,8 +101,8 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0
       libsodium-wrappers:
-        specifier: ^0.7.15
-        version: 0.7.16
+        specifier: 0.7.15
+        version: 0.7.15
       picocolors:
         specifier: ^1.1.0
         version: 1.1.1
@@ -751,8 +751,8 @@ packages:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
 
-  libsodium-wrappers@0.7.16:
-    resolution: {integrity: sha512-Gtr/WBx4dKjvRL1pvfwZqu7gO6AfrQ0u9vFL+kXihtHf6NfkROR8pjYWn98MFDI3jN19Ii1ZUfPR9afGiPyfHg==}
+  libsodium-wrappers@0.7.15:
+    resolution: {integrity: sha512-E4anqJQwcfiC6+Yrl01C1m8p99wEhLmJSs0VQqST66SbQXXBoaJY0pF4BNjRYa/sOQAxx6lXAaAFIlx+15tXJQ==}
 
   libsodium@0.7.16:
     resolution: {integrity: sha512-3HrzSPuzm6Yt9aTYCDxYEG8x8/6C0+ag655Y7rhhWZM9PT4NpdnbqlzXhGZlDnkgR6MeSTnOt/VIyHLs9aSf+Q==}
@@ -1458,7 +1458,7 @@ snapshots:
 
   jiti@2.7.0: {}
 
-  libsodium-wrappers@0.7.16:
+  libsodium-wrappers@0.7.15:
     dependencies:
       libsodium: 0.7.16
 

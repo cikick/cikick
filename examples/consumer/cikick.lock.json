@@ -1,0 +1,24 @@
+{
+  "actions": {
+    "actions/checkout@v4": {
+      "resolvedAt": "2026-11-22T10:36:56.498Z",
+      "sha": "11d5960a326750d5838078e36cf38b85af677262"
+    },
+    "actions/setup-node@v4": {
+      "resolvedAt": "2026-11-22T10:36:56.498Z",
+      "sha": "49933ea5288caeca8642d1e84afbd3f7d6820020"
+    },
+    "actions/upload-artifact@v4": {
+      "resolvedAt": "2026-11-22T10:36:56.498Z",
+      "sha": "ea165f8d65b6e75b540449e92b4886f43607fa02"
+    },
+    "pnpm/action-setup@v4": {
+      "resolvedAt": "2026-11-22T10:36:56.498Z",
+      "sha": "b906affcce14559ad1aafd4ab0e942779e9f58b1"
+    }
+  },
+  "packages": {
+    "@acme/wf-node-ci": "2.0.0"
+  },
+  "version": 1
+}

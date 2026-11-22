@@ -6,6 +6,8 @@ export interface MigrationContext {
   repoDir: string;
   readFile(path: string): string | undefined;
   writeFile(path: string, content: string): void;
+  /** Delete a repo file (no-op if absent). */
+  deleteFile(path: string): void;
   /** ts-morph project for the cikick config file. */
   project: Project;
   log(msg: string): void;

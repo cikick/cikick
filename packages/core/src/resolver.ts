@@ -62,3 +62,53 @@ export class LockResolver implements ActionResolver {
     return e.sha;
   }
 }
+
+export type LsRemote = (url: string, refs: string[]) => Promise<string>;
+
+const defaultLsRemote: LsRemote = async (url, refs) => {
+  const { execFile } = await import('node:child_process');
+  return new Promise((resolve, reject) =>
+    execFile('git', ['ls-remote', url, ...refs], { timeout: 30_000 }, (err, stdout) => (err ? reject(err) : resolve(stdout))),
+  );
+};
+
+/**
+ * Resolves refs with `git ls-remote` — no token, no API rate limit.
+ * Annotated tags are dereferenced (`^{}`) to the commit SHA. Tags win over branches.
+ */
+export class GitResolver implements ActionResolver {
+  constructor(private readonly opts: { host?: string; lsRemote?: LsRemote } = {}) {}
+
+  async resolve(owner: string, repo: string, ref: string): Promise<string> {
+    if (isSha(ref)) return ref;
+    const url = `https://${this.opts.host ?? 'github.com'}/${owner}/${repo}`;
+    const out = await (this.opts.lsRemote ?? defaultLsRemote)(url, [`refs/tags/${ref}`, `refs/tags/${ref}^{}`, `refs/heads/${ref}`]);
+    const map = new Map<string, string>();
+    for (const line of out.split('\n')) {
+      const [sha, name] = line.trim().split(/\s+/);
+      if (sha && name) map.set(name, sha);
+    }
+    const sha = map.get(`refs/tags/${ref}^{}`) ?? map.get(`refs/tags/${ref}`) ?? map.get(`refs/heads/${ref}`);
+    if (!sha || !isSha(sha)) throw new Error(`Failed to resolve ${owner}/${repo}@${ref}: ref not found`);
+    return sha;
+  }
+}
+
+/** Tries each resolver in order; throws the last error if all fail. */
+export class FallbackResolver implements ActionResolver {
+  private readonly resolvers: ActionResolver[];
+  constructor(...resolvers: ActionResolver[]) {
+    this.resolvers = resolvers;
+  }
+  async resolve(owner: string, repo: string, ref: string): Promise<string> {
+    let last: unknown;
+    for (const r of this.resolvers) {
+      try {
+        return await r.resolve(owner, repo, ref);
+      } catch (e) {
+        last = e;
+      }
+    }
+    throw last;
+  }
+}

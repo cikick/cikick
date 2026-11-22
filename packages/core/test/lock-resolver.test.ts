@@ -80,3 +80,21 @@ describe('GitHubResolver', () => {
     }
   });
 });
+
+import { GitResolver, FallbackResolver } from '../src/resolver.js';
+describe('GitResolver', () => {
+  const A = 'a'.repeat(40), B = 'b'.repeat(40), C = 'c'.repeat(40);
+  it('prefers dereferenced annotated tag', async () => {
+    const r = new GitResolver({ lsRemote: async () => `${A}\trefs/tags/v4\n${B}\trefs/tags/v4^{}\n` });
+    expect(await r.resolve('o', 'r', 'v4')).toBe(B);
+  });
+  it('falls back to branch', async () => {
+    const r = new GitResolver({ lsRemote: async () => `${C}\trefs/heads/main\n` });
+    expect(await r.resolve('o', 'r', 'main')).toBe(C);
+  });
+  it('FallbackResolver tries next', async () => {
+    const bad = { resolve: async () => { throw new Error('x'); } };
+    const good = { resolve: async () => A };
+    expect(await new FallbackResolver(bad, good).resolve('o', 'r', 'v1')).toBe(A);
+  });
+});
