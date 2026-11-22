@@ -1,6 +1,8 @@
 import { ManagedFile, Workflow, secret, type Job } from '@cikick/core';
 import { Construct } from 'constructs';
 
+const PUBLISH_ALL = 'publish_all';
+
 export interface ReleasePleaseAppToken {
   /** Repository/org variable holding the GitHub App ID. Default `RELEASE_APP_ID`. */
   appIdVariable?: string;
@@ -81,7 +83,21 @@ export class ReleasePlease extends Construct {
 
     this.workflow = new Workflow(this, 'release-please', {
       name: 'Release',
-      on: { push: { branches: [props.branch ?? 'main'] }, workflowDispatch: {} },
+      on: {
+        push: { branches: [props.branch ?? 'main'] },
+        workflowDispatch: props.publish
+          ? {
+              inputs: {
+                [PUBLISH_ALL]: {
+                  description:
+                    'Publish every configured package that is not yet on npm (recovery after a failed publish)',
+                  type: 'boolean',
+                  default: false,
+                },
+              },
+            }
+          : {},
+      },
       permissions: props.appToken ? { contents: 'read' } : { contents: 'write', pullRequests: 'write' },
       concurrency: { group: 'release-please', cancelInProgress: false },
     });
@@ -112,15 +128,16 @@ export class ReleasePlease extends Construct {
       uses: 'googleapis/release-please-action@v5',
       with: token ? { token } : undefined,
     });
-    if (props.publish) this.publishJob = this.addPublishJob(props.publish);
+    if (props.publish) this.publishJob = this.addPublishJob(props.publish, packages);
   }
 
-  private addPublishJob(p: ReleasePleasePublish): Job {
+  private addPublishJob(p: ReleasePleasePublish, packages: string[]): Job {
     const pm = p.packageManager ?? 'pnpm';
     const job = this.workflow.addJob('publish', {
       runsOn: 'ubuntu-latest',
       needs: this.job,
-      if: this.releasesCreated,
+      // Also runs on a manual dispatch with `publish_all`, to finish a release whose publish partly failed.
+      if: `${this.releasesCreated} || inputs.${PUBLISH_ALL}`,
       timeoutMinutes: 15,
       permissions: { contents: 'read', idToken: 'write' },
     });
@@ -134,7 +151,9 @@ export class ReleasePlease extends Construct {
     job.addStep({ name: 'Update npm', run: 'npm install -g npm@^11.5.1' });
     job.addStep({ name: 'Install', run: pm === 'pnpm' ? 'pnpm install --frozen-lockfile' : 'npm ci' });
     if (p.build !== false) job.addStep({ name: 'Build', run: p.build ?? `${pm} run build` });
-    const env: Record<string, string> = { PATHS_RELEASED: '${{ needs.release-please.outputs.paths_released }}' };
+    const env: Record<string, string> = {
+      PATHS_RELEASED: `\${{ inputs.${PUBLISH_ALL} && '${JSON.stringify(packages)}' || needs.release-please.outputs.paths_released }}`,
+    };
     if (p.npmTokenSecret)
       env.NODE_AUTH_TOKEN = secret(this, p.npmTokenSecret, {
         provider: 'npm',
@@ -148,7 +167,12 @@ export class ReleasePlease extends Construct {
         'set -euo pipefail',
         'out="$RUNNER_TEMP/packages"; mkdir -p "$out"',
         `for p in $(jq -r '.[]' <<<"$PATHS_RELEASED"); do (cd "$p" && ${pm} pack --pack-destination "$out"); done`,
-        `for f in "$out"/*.tgz; do npm publish "$f" --access ${p.access ?? 'public'}; done`,
+        // Idempotent: skip versions already on the registry so a re-run after a partial failure can finish the rest.
+        'for f in "$out"/*.tgz; do',
+        '  spec=$(tar -xOf "$f" package/package.json | jq -r \'.name + "@" + .version\')',
+        '  if npm view "$spec" version >/dev/null 2>&1; then echo "skip $spec (already published)"; continue; fi',
+        `  npm publish "$f" --access ${p.access ?? 'public'}`,
+        'done',
       ].join('\n'),
     });
     return job;

@@ -106,10 +106,13 @@ describe('ReleasePlease publish', () => {
     );
     const job = yaml('.github/workflows/release-please.yml').jobs.publish;
     expect(job.needs).toBe('release-please');
-    expect(job.if).toBe("needs.release-please.outputs.releases_created == 'true'");
+    expect(job.if).toBe("needs.release-please.outputs.releases_created == 'true' || inputs.publish_all");
     expect(job.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
     const step = job.steps.at(-1);
-    expect(step.env.PATHS_RELEASED).toBe('${{ needs.release-please.outputs.paths_released }}');
+    expect(step.env.PATHS_RELEASED).toBe(
+      `\${{ inputs.publish_all && '["packages/a"]' || needs.release-please.outputs.paths_released }}`,
+    );
+    expect(yaml('.github/workflows/release-please.yml').on.workflow_dispatch.inputs.publish_all.type).toBe('boolean');
     expect(step.env.NODE_AUTH_TOKEN).toBe('${{ secrets.NPM_TOKEN }}');
     expect(step.run).toContain('pnpm pack');
     expect(step.run).not.toContain('${{');
