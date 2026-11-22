@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.1](https://github.com/cikick/cikick/compare/fleet-v0.6.0...fleet-v0.6.1) (2026-11-22)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @cikick/core bumped to 0.7.0
+
 ## [0.6.0](https://github.com/cikick/cikick/compare/fleet-v0.5.1...fleet-v0.6.0) (2026-11-22)
 
 
