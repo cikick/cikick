@@ -1,6 +1,7 @@
 import {
   Workflow,
   secret,
+  sh,
   type Job,
   type Permissions,
   type SecretScope,
@@ -293,13 +294,13 @@ export class CloudflareDeploy extends Construct {
         job.addStep({
           id: CONFIG_ID,
           name: 'Check configuration',
-          run: [
-            'if [ -n "$CLOUDFLARE_API_TOKEN" ]; then',
-            '  echo "configured=true" >> "$GITHUB_OUTPUT"',
-            'else',
-            '  echo "::notice::CLOUDFLARE_API_TOKEN is not set; skipping deploy"',
-            'fi',
-          ].join('\n'),
+          run: sh`
+            if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+              echo "configured=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice::CLOUDFLARE_API_TOKEN is not set; skipping deploy"
+            fi
+          `,
         });
       for (const s of toolchainSteps({
         packageManager: pm,

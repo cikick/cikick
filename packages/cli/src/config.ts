@@ -1,4 +1,4 @@
-import { App } from '@cikick/core';
+import { App, setScriptRoot } from '@cikick/core';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createJiti } from 'jiti';
@@ -29,6 +29,7 @@ export interface LoadedConfig {
 /** Load the repo's config: default export is an App, or a function `(app) => void | Promise<void>`. */
 export async function loadConfig(repoDir: string, configure?: (app: App) => void): Promise<LoadedConfig> {
   const configPath = findConfigFile(repoDir);
+  setScriptRoot(repoDir);
   const mod = await importModule(configPath);
   let exp = mod && typeof mod === 'object' && 'default' in mod ? mod.default : mod;
   // interopDefault may yield the default export directly

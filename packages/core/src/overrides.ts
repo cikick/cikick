@@ -1,3 +1,4 @@
+import { isExpr } from './expr.js';
 export type OverrideOp = { op: 'set'; path: string; value: unknown } | { op: 'delete'; path: string };
 
 /** Split a dot path; `\.` escapes a literal dot. */
@@ -46,6 +47,7 @@ export function applyOverrides(obj: unknown, ops: readonly OverrideOp[]): void {
 
 /** Remove undefined values recursively (returns a new structure). */
 export function prune<T>(v: T): T {
+  if (isExpr(v)) return String(v) as any;
   if (Array.isArray(v)) return v.map(prune) as any;
   if (v && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) {
     const out: any = {};
